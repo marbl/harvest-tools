@@ -1,6 +1,7 @@
 AC_INIT(harvest)
 
-AC_ARG_WITH(zlib, [  --with-zlib=<path/to/zlib>     Zlib install dir (default: /usr/local/])
+AC_ARG_WITH(protobuf, [  --with-protobuf=<path/to/protobuf>     Protocol Buffers install dir (default: /usr/local/)])
+AC_ARG_WITH(zlib, [  --with-zlib=<path/to/zlib>     Zlib install dir (default: /usr/local/)])
 
 if test "$with_protobuf" == ""
 then

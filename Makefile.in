@@ -1,3 +1,5 @@
+all : harvest libharvest.a
+
 harvest : harvest.o libharvest.a
 	gcc -arch x86_64 -o harvest -lstdc++ libharvest.a harvest.o
 
@@ -17,8 +19,10 @@ pb/harvest.pb.cc pb/harvest.pb.h : pb/harvest.proto
 	@cd pb; @protoc@ --cpp_out . harvest.proto
 
 install : libharvest.a
+	mkdir -p @prefix@/bin/
 	mkdir -p @prefix@/lib/
 	mkdir -p @prefix@/include/
+	ln -sf `pwd`/harvest @prefix@/bin/
 	ln -sf `pwd`/libharvest.a @prefix@/lib/
 	ln -sf `pwd`/HarvestIO.h @prefix@/include/
 	ln -sf `pwd`/pb/harvest.pb.h @prefix@/include/

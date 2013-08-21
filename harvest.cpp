@@ -8,12 +8,12 @@
 
 #include <iostream>
 #include "HarvestIO.h"
+#include "test.pb.h"
 
 using namespace::std;
 
 int main(int argc, const char * argv[])
 {
-	const char * input;
 	const char * output;
 	const char * fasta;
 	const char * genbank;

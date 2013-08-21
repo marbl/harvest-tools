@@ -27,7 +27,7 @@ void HarvestIO::loadFasta(const char * file)
 		
 		if ( *line == '>' )
 		{
-			msgSequence = mutable_reference()->add_references();
+			msgSequence = harvest.mutable_reference()->add_references();
 			msgSequence->set_tag(line + 1);
 		}
 		else if ( *line != '#' )
@@ -80,7 +80,7 @@ void HarvestIO::loadGenbank(const char * file)
 				token++;
 			}
 			
-			msgAnn = mutable_annotations()->add_annotations();
+			msgAnn = harvest.mutable_annotations()->add_annotations();
 			msgAnn->set_sequence(0);
 			suffix = removePrefix(token, "complement(");
 			msgAnn->set_reverse(suffix);
@@ -138,19 +138,17 @@ void HarvestIO::loadGenbank(const char * file)
 		}
 	}
 	
-	for ( int i = 0; i < annotations().annotations_size(); i++ )
+	for ( int i = 0; i < harvest.annotations().annotations_size(); i++ )
 	{
-		const Harvest::AnnotationList::Annotation msgAnn = annotations().annotations(i);
-		printf("%s\t%d\t%d\t%c\t%s\t%s\n", msgAnn.locus().c_str(), msgAnn.regions(0).start(), msgAnn.regions(0).end(), msgAnn.reverse() ? '-' : '+', msgAnn.name().c_str(), msgAnn.description().c_str());
+		const Harvest::AnnotationList::Annotation msgAnn = harvest.annotations().annotations(i);
+		//printf("%s\t%d\t%d\t%c\t%s\t%s\n", msgAnn.locus().c_str(), msgAnn.regions(0).start(), msgAnn.regions(0).end(), msgAnn.reverse() ? '-' : '+', msgAnn.name().c_str(), msgAnn.description().c_str());
 	}
 	
 	in.close();
 }
 
-void HarvestIO::loadHarvest(const char * file)
+bool HarvestIO::loadHarvest(const char * file)
 {
-	GOOGLE_PROTOBUF_VERIFY_VERSION;
-	
 	int fd = open(file, O_RDONLY);
 	
 	FileInputStream raw_input(fd);
@@ -159,13 +157,15 @@ void HarvestIO::loadHarvest(const char * file)
 	
 	coded_input.SetTotalBytesLimit(1 << 30, 1 << 30);
 	
-	if ( ! ParseFromCodedStream(&coded_input) )
+	if ( ! harvest.ParseFromCodedStream(&coded_input) )
 	{
 		printf("FAIL!\n");
-		//return false;
+		return false;
 	}
 	
+	close(fd);
 	google::protobuf::ShutdownProtobufLibrary();
+	return true;
 }
 
 void HarvestIO::loadNewick(const char * file)
@@ -175,7 +175,7 @@ void HarvestIO::loadNewick(const char * file)
 	
 	while ( in.getline(line, 1 << 20 - 1) )
 	{
-		loadNewickNode(line, mutable_tree()->mutable_root());
+		loadNewickNode(line, harvest.mutable_tree()->mutable_root());
 	}
 	
 	in.close();
@@ -185,7 +185,7 @@ void HarvestIO::loadVcf(const char * file)
 {
 	ifstream in(file);
 	
-	Variation * msg = mutable_variation();
+	Harvest::Variation * msg = harvest.mutable_variation();
 	char line[1 << 20];
 	map<string, google::protobuf::uint64> flagsByFilter;
 	unsigned int alleleCount = 0;
@@ -306,9 +306,9 @@ void HarvestIO::loadXmfa(const char * file)
 	char line[1 << 20];
 	int track = 0;
 	
-	Alignment * msgAlignment = mutable_alignment();
-	TrackList * msgTracks = mutable_tracks();
-	Alignment::Lcb * msgLcb;
+	Harvest::Alignment * msgAlignment = harvest.mutable_alignment();
+	Harvest::TrackList * msgTracks = harvest.mutable_tracks();
+	Harvest::Alignment::Lcb * msgLcb;
 	
 	while ( ! in.eof() )
 	{
@@ -334,7 +334,7 @@ void HarvestIO::loadXmfa(const char * file)
 				msgLcb = msgAlignment->add_lcbs();
 			}
 			
-			Alignment::Lcb::Region * msgRegion = msgLcb->add_regions();
+			Harvest::Alignment::Lcb::Region * msgRegion = msgLcb->add_regions();
 			
 			msgRegion->set_track(track);
 			msgRegion->set_position(atoi(strtok(0, "-")));
@@ -358,11 +358,13 @@ void HarvestIO::writeHarvest(const char * file)
 	FileOutputStream stream(fd);
 	GzipOutputStream zip_stream(&stream);
 	
-	if ( ! SerializeToZeroCopyStream(&zip_stream) )
+	if ( ! harvest.SerializeToZeroCopyStream(&zip_stream) )
 	{
 		printf("Failed to write.\n");
 	}
 	
+	zip_stream.Close();
+	stream.Close();
 	close(fd);
 }
 

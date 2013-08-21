@@ -5,7 +5,7 @@ message Harvest
 		message Sequence
 		{
 			optional string tag = 1;
-			required string sequence = 2;
+			optional string sequence = 2;
 		}
 		
 		repeated Sequence references = 1;
@@ -96,8 +96,8 @@ message Harvest
 		{
 			message Region
 			{
-				required uint32 start = 2; // leftmost ref pos
-				optional uint32 end = 3; // rightmost ref pos
+				optional uint32 start = 1; // leftmost ref pos
+				optional uint32 end = 2; // rightmost ref pos
 			}
 			
 			optional uint32 sequence = 1; // index to 'RootKit.references'

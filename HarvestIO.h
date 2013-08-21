@@ -6,7 +6,7 @@
 #include <string>
 #include <map>
 
-class HarvestIO : public Harvest
+class HarvestIO
 {
 public:
 
@@ -14,12 +14,14 @@ public:
 	
 	void loadFasta(const char * file);
 	void loadGenbank(const char * file);
-	void loadHarvest(const char * file);
+	bool loadHarvest(const char * file);
 	void loadNewick(const char * file);
 	void loadVcf(const char * file);
 	void loadXmfa(const char * file);
 	
 	void writeHarvest(const char * file);
+	
+	Harvest harvest;
 	
 private:
 	

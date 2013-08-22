@@ -24,7 +24,12 @@ fi
 
 CPPFLAGS="-I$with_protobuf/include -I$with_zlib/include"
 AC_CHECK_HEADER(google/protobuf/stubs/common.h)
-AC_CHECK_HEADER(zlib.h)
+AC_CHECK_HEADER(zlib.h, [result=1], [result=0])
+
+if test $result == 0
+then
+	AC_MSG_ERROR([Zlib not found.])
+fi
 
 AC_SUBST(protolib, $with_protobuf/lib/libprotobuf.a)
 AC_SUBST(protoc, $with_protobuf/bin/protoc)

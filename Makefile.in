@@ -1,19 +1,22 @@
+flags=-m64 -Ipb
+
 all : harvest libharvest.a
 
 harvest : harvest.o libharvest.a
-	gcc -arch x86_64 -o harvest -lstdc++ libharvest.a harvest.o
+	gcc ${flags} -o harvest -lstdc++ @protolib@ @zlib@ libharvest.a harvest.o
 
 libharvest.a : HarvestIO.o pb/harvest.pb.o
-	libtool -static -o libharvest.a @protolib@ @zlib@ HarvestIO.o pb/harvest.pb.o
+	ar -cr libharvest.a HarvestIO.o pb/harvest.pb.o
+	ranlib libharvest.a
 
 harvest.o : harvest.cpp HarvestIO.h pb/harvest.pb.h
-	gcc -arch x86_64 -c harvest.cpp
+	gcc ${flags} -c harvest.cpp
 
 HarvestIO.o : HarvestIO.cpp HarvestIO.h pb/harvest.pb.cc pb/harvest.pb.h
-	gcc -arch x86_64 -c -Ipb HarvestIO.cpp
+	gcc ${flags} -c -Ipb HarvestIO.cpp
 
 pb/harvest.pb.o : pb/harvest.pb.cc
-	@cd pb; gcc -arch x86_64 -c harvest.pb.cc
+	@cd pb; gcc ${flags} -c harvest.pb.cc
 
 pb/harvest.pb.cc pb/harvest.pb.h : pb/harvest.proto
 	@cd pb; @protoc@ --cpp_out . harvest.proto

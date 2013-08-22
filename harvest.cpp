@@ -8,7 +8,6 @@
 
 #include <iostream>
 #include "HarvestIO.h"
-#include "test.pb.h"
 
 using namespace::std;
 

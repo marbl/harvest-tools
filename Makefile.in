@@ -1,9 +1,9 @@
-flags=-m64 -Ipb
+flags=-Ipb -I@protobuf@/include
 
 all : harvest libharvest.a
 
 harvest : harvest.o libharvest.a
-	gcc ${flags} -o harvest -lstdc++ @protolib@ @zlib@ libharvest.a harvest.o
+	gcc ${flags} -o harvest -lstdc++ harvest.o libharvest.a @protobuf@/lib/libprotobuf.a @zlib@
 
 libharvest.a : HarvestIO.o pb/harvest.pb.o
 	ar -cr libharvest.a HarvestIO.o pb/harvest.pb.o
@@ -19,7 +19,7 @@ pb/harvest.pb.o : pb/harvest.pb.cc
 	@cd pb; gcc ${flags} -c harvest.pb.cc
 
 pb/harvest.pb.cc pb/harvest.pb.h : pb/harvest.proto
-	@cd pb; @protoc@ --cpp_out . harvest.proto
+	@cd pb; @protobuf@/bin/protoc --cpp_out . harvest.proto
 
 install : libharvest.a
 	mkdir -p @prefix@/bin/

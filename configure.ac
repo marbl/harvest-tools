@@ -31,7 +31,6 @@ then
 	AC_MSG_ERROR([Zlib not found.])
 fi
 
-AC_SUBST(protolib, $with_protobuf/lib/libprotobuf.a)
-AC_SUBST(protoc, $with_protobuf/bin/protoc)
+AC_SUBST(protobuf, $with_protobuf)
 AC_SUBST(zlib, $with_zlib/lib/libz.a)
 AC_OUTPUT(Makefile)

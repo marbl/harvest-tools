@@ -1,0 +1,28 @@
+Dependencies:
+-------------
+   - Protocol Buffers ( https://code.google.com/p/protobuf/ )
+   - Zlib ( http://www.zlib.net/ )
+
+
+Steps:
+------
+   ./configure [--prefix=...] [--with-protobuf=...] [--with-zlib=...]
+   make
+   [sudo] make install
+
+
+Products:
+---------
+   - command line tool ( <prefix>/bin/harvest )
+   - static library ( <prefix>/lib/libharvest.a )
+   - includes
+      - Harvest, Protocol Buffer message class ( <prefix>/include/harvest.pb.h )
+      - HarvestIO, Harvest wrapper with file IO ( <prefix>/include/HarvestIO.h )
+
+
+Notes:
+------
+When running ./configure, use --prefix to install somewhere other than
+/usr/local. Use --with-protobuf or --with-zlib with if these libraries are not
+in their default location (/usr/local). Sudo will be necessary for
+'make install' if write permission is not available in --prefix.

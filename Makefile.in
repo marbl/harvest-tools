@@ -1,9 +1,9 @@
-flags=-Ipb -I@protobuf@/include -lz
+flags=-Ipb -I@protobuf@/include
 
 all : harvest libharvest.a
 
 harvest : harvest.o libharvest.a
-	gcc ${flags} -o harvest -lstdc++ harvest.o libharvest.a @protobuf@/lib/libprotobuf.a
+	gcc ${flags} -o harvest -lstdc++ -lz harvest.o libharvest.a @protobuf@/lib/libprotobuf.a
 
 libharvest.a : HarvestIO.o pb/harvest.pb.o
 	ar -cr libharvest.a HarvestIO.o pb/harvest.pb.o
@@ -13,7 +13,7 @@ harvest.o : harvest.cpp HarvestIO.h pb/harvest.pb.h
 	gcc ${flags} -c harvest.cpp
 
 HarvestIO.o : HarvestIO.cpp HarvestIO.h pb/harvest.pb.cc pb/harvest.pb.h
-	gcc ${flags} -c -Ipb HarvestIO.cpp
+	gcc ${flags} -c HarvestIO.cpp
 
 pb/harvest.pb.o : pb/harvest.pb.cc
 	@cd pb; gcc ${flags} -c harvest.pb.cc

@@ -13,12 +13,12 @@ using namespace::std;
 
 int main(int argc, const char * argv[])
 {
-	const char * output;
-	const char * fasta;
-	const char * genbank;
-	const char * newick;
-	const char * vcf;
-	const char * xmfa;
+	const char * output = 0;
+	const char * fasta = 0;
+	const char * genbank = 0;
+	const char * newick = 0;
+	const char * vcf = 0;
+	const char * xmfa = 0;
 	
 	for ( int i = 0; i < argc; i++ )
 	{
@@ -46,7 +46,12 @@ int main(int argc, const char * argv[])
 	HarvestIO hio;
 	
 	hio.loadFasta(fasta);
-	hio.loadGenbank(genbank);
+	
+	if ( genbank )
+	{
+		hio.loadGenbank(genbank);
+	}
+	
 	hio.loadXmfa(xmfa);
 	hio.loadNewick(newick);
 	hio.loadVcf(vcf);

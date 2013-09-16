@@ -5,6 +5,7 @@
 #include "harvest.pb.h"
 #include <string>
 #include <map>
+#include <vector>
 
 class HarvestIO
 {
@@ -15,6 +16,7 @@ public:
 	void loadFasta(const char * file);
 	void loadGenbank(const char * file);
 	bool loadHarvest(const char * file);
+	void loadMFA(const char * file);
 	void loadNewick(const char * file);
 	void loadVcf(const char * file);
 	void loadXmfa(const char * file);
@@ -35,11 +37,13 @@ private:
 		STATE_end,
 	};
 	
-	char * loadNewickNode(char * token, Harvest::Tree::Node * msg);
+	void findVariants(const std::vector<std::string> & seqs);
+	char * loadNewickNode(char * token, Harvest::Tree::Node * msg, bool useNames);
 	
 	std::map<std::string, google::protobuf::uint32> tracksByFile;
 };
 
 char * removePrefix(char * string, const char * substring);
+void ungap(std::string & gapped);
 
 #endif

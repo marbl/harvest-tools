@@ -16,6 +16,7 @@ int main(int argc, const char * argv[])
 	const char * output = 0;
 	const char * fasta = 0;
 	const char * genbank = 0;
+	const char * mfa = 0;
 	const char * newick = 0;
 	const char * vcf = 0;
 	const char * xmfa = 0;
@@ -28,6 +29,7 @@ int main(int argc, const char * argv[])
 			{
 				case 'b': genbank = argv[++i]; break;
 				case 'f': fasta = argv[++i]; break;
+				case 'm': mfa = argv[++i]; break;
 				case 'n': newick = argv[++i]; break;
 				case 'o': output = argv[++i]; break;
 				case 'v': vcf = argv[++i]; break;
@@ -38,12 +40,30 @@ int main(int argc, const char * argv[])
 	
 	cout << "Output:" << output << '\n';
 	cout << "Fasta:" << fasta << '\n';
-	cout << "GenBank:" << genbank << "\n";
+	
+	if ( genbank )
+	{
+		cout << "GenBank:" << genbank << "\n";
+	}
+	
+	if ( mfa )
+	{
+		cout << "MFA:" << mfa << "\n";
+	}
+	
 	cout << "Newick:" << newick << "\n";
 	cout << "VCF:" << vcf << "\n";
 	cout << "XMFA:" << xmfa << "\n";
 	
 	HarvestIO hio;
+	
+	if ( mfa )
+	{
+		hio.loadMFA(mfa);
+		hio.loadNewick(newick);
+		hio.writeHarvest(output);
+		return 0;
+	}
 	
 	hio.loadFasta(fasta);
 	

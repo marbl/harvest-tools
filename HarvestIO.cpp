@@ -6,6 +6,7 @@
 #include <google/protobuf/io/coded_stream.h>
 #include <fcntl.h>
 #include <fstream>
+#include <iostream>
 
 using namespace::std;
 using namespace::google::protobuf::io;
@@ -168,14 +169,75 @@ bool HarvestIO::loadHarvest(const char * file)
 	return true;
 }
 
+void HarvestIO::loadMFA(const char * file)
+{
+	ifstream in(file);
+	
+	char line[1 << 20];
+	vector<string> seqs;
+	bool oldTags = tracksByFile.size();
+	Harvest::Reference::Sequence * msgSequence;
+	msgSequence = harvest.mutable_reference()->add_references();
+	Harvest::Alignment * msgAlignment = harvest.mutable_alignment();
+	Harvest::TrackList * msgTracks = harvest.mutable_tracks();
+	
+	while ( ! in.eof() )
+	{
+		if ( in.peek() == '#' )
+		{
+			continue;
+		}
+		
+		if ( in.peek() == '>' )
+		{
+			in.getline(line, 1 << 20 - 1);
+			string tag(strtok(line + 1, " "));
+			string desc(strtok(0, "\n"));
+			
+			if ( seqs.size() == 0 )
+			{
+				msgSequence->set_tag(line + 1);
+			}
+			
+			msgTracks->add_tracks()->set_file(tag);
+			tracksByFile[tag] = seqs.size();
+			seqs.resize(seqs.size() + 1);
+		}
+		
+		in.getline(line, 1 << 20 - 1);
+		seqs[seqs.size() - 1].append(line);
+	}
+	
+	in.close();
+	msgSequence->set_sequence(seqs[0]);
+	ungap(*msgSequence->mutable_sequence());
+	
+	Harvest::Alignment::Lcb * msgLcb = msgAlignment->add_lcbs();
+	msgLcb->set_position(0);
+	
+	for ( int i = 0; i < msgTracks->tracks_size(); i++ )
+	{
+		Harvest::Alignment::Lcb::Region * msgRegion = msgLcb->add_regions();
+		
+		msgRegion->set_track(i);
+		msgRegion->set_position(0);
+		msgRegion->set_length(msgSequence->sequence().length());
+		msgRegion->set_reverse(false);
+	}
+	
+	findVariants(seqs);
+}
+
 void HarvestIO::loadNewick(const char * file)
 {
 	ifstream in(file);
 	char line[1 << 20];
 	
+	bool useNames = ! harvest.has_tracks() || harvest.tracks().tracks_size() == 0;
+	
 	while ( in.getline(line, 1 << 20 - 1) )
 	{
-		loadNewickNode(line, harvest.mutable_tree()->mutable_root());
+		loadNewickNode(line, harvest.mutable_tree()->mutable_root(), useNames);
 	}
 	
 	in.close();
@@ -368,7 +430,40 @@ void HarvestIO::writeHarvest(const char * file)
 	close(fd);
 }
 
-char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg)
+void HarvestIO::findVariants(const vector<string> & seqs)
+{
+	Harvest::Variation * msg = harvest.mutable_variation();
+	char col[seqs.size() + 1];
+	
+	col[seqs.size()] = 0;
+	
+	for ( int i = 0; i < seqs[0].length(); i++ )
+	{
+		bool variant = false;
+		col[0] = seqs[0][i];
+		
+		for ( int j = 1; j < seqs.size(); j++ )
+		{
+			col[j] = seqs[j][i];
+			
+			if ( ! variant && col[j] != col[0] )
+			{
+				variant = true;
+			}
+		}
+		
+		if ( variant )
+		{
+			Harvest::Variation::Variant * variant = msg->add_variants();
+			
+			variant->set_sequence(0);
+			variant->set_position(i);
+			variant->set_alleles(col);
+		}
+	}
+}
+
+char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg, bool useNames)
 {
 	ParseState state = STATE_start;
 	char * valueStart;
@@ -403,7 +498,7 @@ char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg)
 			}
 			else
 			{
-				token = loadNewickNode(token, msg->add_children());
+				token = loadNewickNode(token, msg->add_children(), useNames);
 			}
 		}
 		else if ( state == STATE_nameLeaf || state == STATE_nameInternal )
@@ -436,7 +531,16 @@ char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg)
 					}
 					else
 					{
-						msg->set_track(tracksByFile.at(valueStart));
+						if ( useNames )
+						{
+							msg->set_track(harvest.tracks().tracks_size());
+							tracksByFile[valueStart] = msg->track();
+							harvest.mutable_tracks()->add_tracks()->set_file(valueStart);
+						}
+						else
+						{
+							msg->set_track(tracksByFile.at(valueStart));
+						}
 					}
 				}
 				
@@ -475,5 +579,19 @@ char * removePrefix(char * string, const char * substring)
 	else
 	{
 		return 0;
+	}
+}
+
+void ungap(string & gapped)
+{
+	int pos = 0;
+	
+	for ( int i = 0; i < gapped.length(); i++ )
+	{
+		if ( gapped[i] != '-' )
+		{
+			gapped[pos] = gapped[i];
+			pos++;
+		}
 	}
 }

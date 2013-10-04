@@ -9,7 +9,7 @@ fi
 
 AC_LANG(C++)
 
-AC_CHECK_PROG(protocCheck, protoc, "yes", "no" $with_protobuf/bin)
+AC_CHECK_PROG(protocCheck, protoc, "yes", "no", $with_protobuf/bin)
 
 if test "$protocCheck" != "yes"
 then

@@ -19,7 +19,7 @@ public:
 	void loadMFA(const char * file);
 	void loadNewick(const char * file);
 	void loadVcf(const char * file);
-	void loadXmfa(const char * file);
+	void loadXmfa(const char * file, bool variants = false);
 	
 	void writeHarvest(const char * file);
 	
@@ -37,7 +37,7 @@ private:
 		STATE_end,
 	};
 	
-	void findVariants(const std::vector<std::string> & seqs);
+	void findVariants(const std::vector<std::string> & seqs, int position = 0);
 	char * loadNewickNode(char * token, Harvest::Tree::Node * msg, bool useNames);
 	
 	std::map<std::string, google::protobuf::uint32> tracksByFile;

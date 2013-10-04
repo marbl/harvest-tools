@@ -362,11 +362,12 @@ void HarvestIO::loadVcf(const char * file)
 	in.close();
 }
 
-void HarvestIO::loadXmfa(const char * file)
+void HarvestIO::loadXmfa(const char * file, bool variants)
 {
 	ifstream in(file);
 	char line[1 << 20];
 	int track = 0;
+	vector<string> seqs;
 	
 	Harvest::Alignment * msgAlignment = harvest.mutable_alignment();
 	Harvest::TrackList * msgTracks = harvest.mutable_tracks();
@@ -393,6 +394,11 @@ void HarvestIO::loadXmfa(const char * file)
 			
 			if ( track == 0 )
 			{
+				if ( variants && msgAlignment->lcbs_size() == 0 )
+				{
+					seqs.resize(tracksByFile.size());
+				}
+				
 				msgLcb = msgAlignment->add_lcbs();
 			}
 			
@@ -408,6 +414,33 @@ void HarvestIO::loadXmfa(const char * file)
 			{
 				msgLcb->set_position(msgRegion->position());
 			}
+		}
+		else if ( variants && *line == '=' )
+		{
+			bool all = true;
+			
+			for ( int i = 0; i < seqs.size(); i++ )
+			{
+				if ( seqs[i].length() == 0 )
+				{
+					all = false;
+					break;
+				}
+			}
+			
+			if ( all )
+			{
+				findVariants(seqs, msgRegion->position());
+			}
+			
+			for ( int i = 0; i < seqs.size(); i++ )
+			{
+				seqs[i].clear();
+			}
+		}
+		else
+		{
+			seqs[track].append(line);
 		}
 	}
 	
@@ -430,7 +463,7 @@ void HarvestIO::writeHarvest(const char * file)
 	close(fd);
 }
 
-void HarvestIO::findVariants(const vector<string> & seqs)
+void HarvestIO::findVariants(const vector<string> & seqs, int position)
 {
 	Harvest::Variation * msg = harvest.mutable_variation();
 	char col[seqs.size() + 1];
@@ -457,8 +490,13 @@ void HarvestIO::findVariants(const vector<string> & seqs)
 			Harvest::Variation::Variant * variant = msg->add_variants();
 			
 			variant->set_sequence(0);
-			variant->set_position(i);
+			variant->set_position(position);
 			variant->set_alleles(col);
+		}
+		
+		if ( col[0] != '-' )
+		{
+			position++;
 		}
 	}
 }

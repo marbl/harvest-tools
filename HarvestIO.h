@@ -22,6 +22,7 @@ public:
 	void loadXmfa(const char * file, bool variants = false);
 	
 	void writeHarvest(const char * file);
+	void writeSnp(const char * file, bool indels = false);
 	
 	Harvest harvest;
 	

@@ -430,7 +430,7 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 			
 			if ( all )
 			{
-				findVariants(seqs, msgRegion->position());
+				findVariants(seqs, msgLcb->position());
 			}
 			
 			for ( int i = 0; i < seqs.size(); i++ )

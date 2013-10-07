@@ -13,6 +13,7 @@ using namespace::std;
 
 int main(int argc, const char * argv[])
 {
+	const char * in = 0;
 	const char * output = 0;
 	const char * fasta = 0;
 	const char * genbank = 0;
@@ -20,6 +21,7 @@ int main(int argc, const char * argv[])
 	const char * newick = 0;
 	const char * vcf = 0;
 	const char * xmfa = 0;
+	const char * outSnp = 0;
 	
 	for ( int i = 0; i < argc; i++ )
 	{
@@ -29,11 +31,13 @@ int main(int argc, const char * argv[])
 			{
 				case 'b': genbank = argv[++i]; break;
 				case 'f': fasta = argv[++i]; break;
+				case 'i': in = argv[++i]; break;
 				case 'm': mfa = argv[++i]; break;
 				case 'n': newick = argv[++i]; break;
 				case 'o': output = argv[++i]; break;
 				case 'v': vcf = argv[++i]; break;
 				case 'x': xmfa = argv[++i]; break;
+				case 'S': outSnp = argv[++i]; break;
 			}
 		}
 	}
@@ -57,6 +61,11 @@ int main(int argc, const char * argv[])
 	
 	HarvestIO hio;
 	
+	if ( in )
+	{
+		hio.loadHarvest(in);
+	}
+	
 	if ( mfa )
 	{
 		hio.loadMFA(mfa);
@@ -65,18 +74,40 @@ int main(int argc, const char * argv[])
 		return 0;
 	}
 	
-	hio.loadFasta(fasta);
+	if ( fasta )
+	{
+		hio.loadFasta(fasta);
+	}
 	
 	if ( genbank )
 	{
 		hio.loadGenbank(genbank);
 	}
 	
-	hio.loadXmfa(xmfa);
-	hio.loadNewick(newick);
-	hio.loadVcf(vcf);
+	if ( newick )
+	{
+		hio.loadNewick(newick);
+	}
 	
-	hio.writeHarvest(output);
+	if ( xmfa )
+	{
+		hio.loadXmfa(xmfa);
+	}
+	
+	if ( vcf )
+	{
+		hio.loadVcf(vcf);
+	}
+	
+	if ( output )
+	{
+		hio.writeHarvest(output);
+	}
+	
+	if ( outSnp )
+	{
+		hio.writeSnps(outSnp);
+	}
 	
     return 0;
 }

@@ -22,6 +22,7 @@ public:
 	void loadXmfa(const char * file);
 	
 	void writeHarvest(const char * file);
+	void writeSnps(const char * file);
 	
 	Harvest harvest;
 	
@@ -38,7 +39,7 @@ private:
 	};
 	
 	void findVariants(const std::vector<std::string> & seqs);
-	char * loadNewickNode(char * token, Harvest::Tree::Node * msg, bool useNames);
+	char * loadNewickNode(char * token, Harvest::Tree::Node * msg, int & leaf, bool useNames);
 	
 	std::map<std::string, google::protobuf::uint32> tracksByFile;
 };

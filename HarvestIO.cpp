@@ -175,11 +175,17 @@ void HarvestIO::loadMFA(const char * file)
 	
 	char line[1 << 20];
 	vector<string> seqs;
+	vector<google::protobuf::uint32> leafByTrack;
 	bool oldTags = tracksByFile.size();
 	Harvest::Reference::Sequence * msgSequence;
 	msgSequence = harvest.mutable_reference()->add_references();
 	Harvest::Alignment * msgAlignment = harvest.mutable_alignment();
 	Harvest::TrackList * msgTracks = harvest.mutable_tracks();
+	
+	if ( oldTags )
+	{
+		leafByTrack.resize(tracksByFile.size());
+	}
 	
 	while ( ! in.eof() )
 	{
@@ -199,7 +205,21 @@ void HarvestIO::loadMFA(const char * file)
 				msgSequence->set_tag(line + 1);
 			}
 			
-			msgTracks->add_tracks()->set_file(tag);
+			Harvest::TrackList::Track * msgTrack;
+			int track = seqs.size();
+			
+			if ( oldTags )
+			{
+				msgTrack = msgTracks->mutable_tracks(track);
+				leafByTrack[track] =
+					msgTracks->tracks(tracksByFile[tag]).leaf();
+			}
+			else
+			{
+				msgTrack = msgTracks->add_tracks();
+			}
+			
+			msgTrack->set_file(tag);
 			tracksByFile[tag] = seqs.size();
 			seqs.resize(seqs.size() + 1);
 		}
@@ -209,6 +229,15 @@ void HarvestIO::loadMFA(const char * file)
 	}
 	
 	in.close();
+	
+	if ( oldTags )
+	{
+		for ( int i = 0; i < msgTracks->tracks_size(); i++ )
+		{
+			msgTracks->mutable_tracks(i)->set_leaf(leafByTrack[i]);
+		}
+	}
+	
 	msgSequence->set_sequence(seqs[0]);
 	ungap(*msgSequence->mutable_sequence());
 	
@@ -237,7 +266,8 @@ void HarvestIO::loadNewick(const char * file)
 	
 	while ( in.getline(line, 1 << 20 - 1) )
 	{
-		loadNewickNode(line, harvest.mutable_tree()->mutable_root(), useNames);
+		int leaf = 0;
+		loadNewickNode(line, harvest.mutable_tree()->mutable_root(), leaf, useNames);
 	}
 	
 	in.close();
@@ -283,6 +313,23 @@ void HarvestIO::loadVcf(const char * file)
 				flagsByFilter[filter->name()] = flag;
 				filter->set_flag(flag);
 				//printf("FILTER:\t%d\t%s\t%s\n", filter->flag(), filter->name().c_str(), filter->description().c_str());
+			}
+			else if ( ! harvest.has_tracks() && strncmp(line, "#CHROM", 6) == 0 )
+			{
+				char * token;
+				
+				strtok(line, "\t");
+				
+				for ( int i = 0; i < 8; i++ )
+				{
+					strtok(0, "\t"); // eat headers
+				}
+				
+				while ( (token = strtok(0, "\t")) )
+				{
+					Harvest::TrackList::Track * msgTrack = harvest.mutable_tracks()->add_tracks();
+					msgTrack->set_name(token);
+				}
 			}
 		}
 		else
@@ -368,9 +415,16 @@ void HarvestIO::loadXmfa(const char * file)
 	char line[1 << 20];
 	int track = 0;
 	
+	vector<google::protobuf::uint32> leafByTrack;
+	bool oldTags = tracksByFile.size();
 	Harvest::Alignment * msgAlignment = harvest.mutable_alignment();
 	Harvest::TrackList * msgTracks = harvest.mutable_tracks();
 	Harvest::Alignment::Lcb * msgLcb;
+	
+	if ( oldTags )
+	{
+		leafByTrack.resize(tracksByFile.size());
+	}
 	
 	while ( ! in.eof() )
 	{
@@ -382,7 +436,20 @@ void HarvestIO::loadXmfa(const char * file)
 			
 			if ( (suffix = removePrefix(line, "##SequenceFile ")) )
 			{
-				msgTracks->add_tracks()->set_file(suffix);
+				Harvest::TrackList::Track * msgTrack;
+				
+				if ( oldTags )
+				{
+					msgTrack = msgTracks->mutable_tracks(track);
+					leafByTrack[track] =
+						msgTracks->tracks(tracksByFile[suffix]).leaf();
+				}
+				else
+				{
+					msgTrack = msgTracks->add_tracks();
+				}
+				
+				msgTrack->set_file(suffix);
 				tracksByFile[suffix] = track;
 				track++;
 			}
@@ -411,6 +478,14 @@ void HarvestIO::loadXmfa(const char * file)
 		}
 	}
 	
+	if ( oldTags )
+	{
+		for ( int i = 0; i < msgTracks->tracks_size(); i++ )
+		{
+			msgTracks->mutable_tracks(i)->set_leaf(leafByTrack[i]);
+		}
+	}
+	
 	in.close();
 }
 
@@ -428,6 +503,32 @@ void HarvestIO::writeHarvest(const char * file)
 	zip_stream.Close();
 	stream.Close();
 	close(fd);
+}
+
+void HarvestIO::writeSnps(const char * file)
+{
+	ofstream out(file);
+	int wrap = 80;
+	
+	for ( int i = 0; i < harvest.tracks().tracks_size(); i++ )
+	{
+		const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
+		out << '>' << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << '\n';
+		
+		for ( int j = 0; j < harvest.variation().variants_size(); j++ )
+		{
+			if ( wrap && j && j % wrap == 0 )
+			{
+				out << '\n';
+			}
+			
+			out << harvest.variation().variants(j).alleles()[i];
+		}
+		
+		out << '\n';
+	}
+	
+	out.close();
 }
 
 void HarvestIO::findVariants(const vector<string> & seqs)
@@ -463,7 +564,7 @@ void HarvestIO::findVariants(const vector<string> & seqs)
 	}
 }
 
-char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg, bool useNames)
+char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg, int & leaf, bool useNames)
 {
 	ParseState state = STATE_start;
 	char * valueStart;
@@ -498,7 +599,7 @@ char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg, bool u
 			}
 			else
 			{
-				token = loadNewickNode(token, msg->add_children(), useNames);
+				token = loadNewickNode(token, msg->add_children(), leaf, useNames);
 			}
 		}
 		else if ( state == STATE_nameLeaf || state == STATE_nameInternal )
@@ -531,16 +632,22 @@ char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg, bool u
 					}
 					else
 					{
+						google::protobuf::uint32 track;
+						
 						if ( useNames )
 						{
-							msg->set_track(harvest.tracks().tracks_size());
-							tracksByFile[valueStart] = msg->track();
+							track = harvest.tracks().tracks_size();
+							tracksByFile[valueStart] = track;
 							harvest.mutable_tracks()->add_tracks()->set_file(valueStart);
 						}
 						else
 						{
-							msg->set_track(tracksByFile.at(valueStart));
+							track = tracksByFile.at(valueStart);
 						}
+						
+						harvest.mutable_tracks()->mutable_tracks(track)->set_leaf(leaf);
+						leaf++;
+						//msgTree->add_track_by_leaf(track);
 					}
 				}
 				

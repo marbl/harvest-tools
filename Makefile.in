@@ -3,17 +3,23 @@ flags=-Ipb -I@protobuf@/include
 all : harvest libharvest.a
 
 harvest : harvest.o libharvest.a
-	gcc ${flags} -o harvest -lstdc++ -lz harvest.o libharvest.a @protobuf@/lib/libprotobuf.a
+	gcc ${flags} -o harvest -lstdc++ -lz -lm harvest.o libharvest.a @protobuf@/lib/libprotobuf.a
 
-libharvest.a : HarvestIO.o pb/harvest.pb.o
+libharvest.a : HarvestIO.o pb/harvest.pb.o Tree.o TreeNode.o
 	ar -cr libharvest.a HarvestIO.o pb/harvest.pb.o
 	ranlib libharvest.a
 
-harvest.o : harvest.cpp HarvestIO.h pb/harvest.pb.h
+harvest.o : harvest.cpp HarvestIO.h pb/harvest.pb.h Tree.h TreeNode.h
 	gcc ${flags} -c harvest.cpp
 
-HarvestIO.o : HarvestIO.cpp HarvestIO.h pb/harvest.pb.cc pb/harvest.pb.h
+HarvestIO.o : HarvestIO.cpp HarvestIO.h pb/harvest.pb.cc pb/harvest.pb.h Tree.h TreeNode.h
 	gcc ${flags} -c HarvestIO.cpp
+
+Tree.o : Tree.cpp Tree.h
+	gcc ${flags} -c Tree.cpp
+
+TreeNode.o : TreeNode.cpp TreeNode.h
+	gcc ${flags} -c TreeNode.cpp
 
 pb/harvest.pb.o : pb/harvest.pb.cc
 	@cd pb; gcc ${flags} -c harvest.pb.cc
@@ -25,7 +31,10 @@ install : libharvest.a
 	mkdir -p @prefix@/bin/
 	mkdir -p @prefix@/lib/
 	mkdir -p @prefix@/include/
+	mkdir -p @prefix@/include/Harvest
 	ln -sf `pwd`/harvest @prefix@/bin/
 	ln -sf `pwd`/libharvest.a @prefix@/lib/
-	ln -sf `pwd`/HarvestIO.h @prefix@/include/
-	ln -sf `pwd`/pb/harvest.pb.h @prefix@/include/
+	ln -sf `pwd`/HarvestIO.h @prefix@/include/Harvest/
+	ln -sf `pwd`/Tree.h @prefix@/include/Harvest/
+	ln -sf `pwd`/TreeNode.h @prefix@/include/Harvest/
+	ln -sf `pwd`/pb/harvest.pb.h @prefix@/include/Harvest/

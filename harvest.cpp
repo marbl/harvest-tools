@@ -33,29 +33,12 @@ int main(int argc, const char * argv[])
 				case 'm': mfa = argv[++i]; break;
 				case 'n': newick = argv[++i]; break;
 				case 'o': output = argv[++i]; break;
-				case 'S': 
+				case 'S': outSnp = argv[++i]; break;
 				case 'v': vcf = argv[++i]; break;
 				case 'x': xmfa = argv[++i]; break;
 			}
 		}
 	}
-	
-	cout << "Output:" << output << '\n';
-	cout << "Fasta:" << fasta << '\n';
-	
-	if ( genbank )
-	{
-		cout << "GenBank:" << genbank << "\n";
-	}
-	
-	if ( mfa )
-	{
-		cout << "MFA:" << mfa << "\n";
-	}
-	
-	cout << "Newick:" << newick << "\n";
-	cout << "VCF:" << vcf << "\n";
-	cout << "XMFA:" << xmfa << "\n";
 	
 	HarvestIO hio;
 	
@@ -79,7 +62,8 @@ int main(int argc, const char * argv[])
 	
 	if ( xmfa )
 	{
-		hio.loadXmfa(xmfa);
+		printf("Loading %s...\n", xmfa);
+		hio.loadXmfa(xmfa, vcf == 0);
 	}
 	
 	if ( newick )
@@ -99,6 +83,7 @@ int main(int argc, const char * argv[])
 	
 	if ( outSnp )
 	{
+		printf("Writing %s...\n", outSnp);
 		hio.writeSnp(outSnp);
 	}
 	

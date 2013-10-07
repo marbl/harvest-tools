@@ -384,6 +384,7 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 			if ( (suffix = removePrefix(line, "##SequenceFile ")) )
 			{
 				msgTracks->add_tracks()->set_file(suffix);
+//				printf("track %d - %s\n", track, suffix);
 				tracksByFile[suffix] = track;
 				track++;
 			}
@@ -463,6 +464,42 @@ void HarvestIO::writeHarvest(const char * file)
 	close(fd);
 }
 
+void HarvestIO::writeSnp(const char * file, bool indels)
+{
+	ofstream out(file);
+	int wrap = 80;
+	int col;
+	
+	for ( int i = 0; i < harvest.tracks().tracks_size(); i++ )
+	{
+		const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
+		out << '>' << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << '\n';
+		col = 0;
+		
+		for ( int j = 0; j < harvest.variation().variants_size(); j++ )
+		{
+			if ( ! indels && harvest.variation().variants(j).filters() )
+			{
+				continue;
+			}
+			
+			col++;
+			
+			if ( wrap && col > wrap )
+			{
+				out << '\n';
+				col = 1;
+			}
+			
+			out << harvest.variation().variants(j).alleles()[i];
+		}
+		
+		out << '\n';
+	}
+	
+	out.close();
+}
+
 void HarvestIO::findVariants(const vector<string> & seqs, int position)
 {
 	Harvest::Variation * msg = harvest.mutable_variation();
@@ -473,7 +510,10 @@ void HarvestIO::findVariants(const vector<string> & seqs, int position)
 	for ( int i = 0; i < seqs[0].length(); i++ )
 	{
 		bool variant = false;
+		
 		col[0] = seqs[0][i];
+		
+		bool indel = col[0] == '-';
 		
 		for ( int j = 1; j < seqs.size(); j++ )
 		{
@@ -482,6 +522,11 @@ void HarvestIO::findVariants(const vector<string> & seqs, int position)
 			if ( ! variant && col[j] != col[0] )
 			{
 				variant = true;
+			}
+			
+			if ( ! indel && col[j] == '-' )
+			{
+				indel = true;
 			}
 		}
 		
@@ -492,6 +537,7 @@ void HarvestIO::findVariants(const vector<string> & seqs, int position)
 			variant->set_sequence(0);
 			variant->set_position(position);
 			variant->set_alleles(col);
+			variant->set_filters(indel ? 1 : 0);
 		}
 		
 		if ( col[0] != '-' )

@@ -439,7 +439,7 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 				seqs[i].clear();
 			}
 		}
-		else
+		else if ( variants )
 		{
 			seqs[track].append(line);
 		}

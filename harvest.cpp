@@ -21,7 +21,9 @@ int main(int argc, const char * argv[])
 	const char * vcf = 0;
 	const char * xmfa = 0;
 	const char * outSnp = 0;
-	
+	const char * outVcf = 0;
+	bool help = false;
+        bool quiet = false;
 	for ( int i = 0; i < argc; i++ )
 	{
 		if ( argv[i][0] == '-' )
@@ -30,16 +32,25 @@ int main(int argc, const char * argv[])
 			{
 				case 'b': genbank = argv[++i]; break;
 				case 'f': fasta = argv[++i]; break;
+				case 'h': help =true; break;
 				case 'm': mfa = argv[++i]; break;
 				case 'n': newick = argv[++i]; break;
 				case 'o': output = argv[++i]; break;
+				case 'q': quiet =true; break;
 				case 'S': outSnp = argv[++i]; break;
+                                case 'V': outVcf = argv[++i]; break;
 				case 'v': vcf = argv[++i]; break;
 				case 'x': xmfa = argv[++i]; break;
 			}
 		}
 	}
-	
+	if (help || argc < 2)
+	{
+	  cout << "harVest usage: harvest -f <reference fasta> -b <reference genbank> -n <newick tree> -o <hvt output> -S <output for multi-fasta SNPs> -V <output for VCF> -v <input VCF> -x <xmfa alignment file> -h (show this help) -q (quiet mode)" << endl;
+	  exit(0);
+
+	}
+
 	HarvestIO hio;
 	
 	if ( mfa )
@@ -62,7 +73,8 @@ int main(int argc, const char * argv[])
 	
 	if ( xmfa )
 	{
-		printf("Loading %s...\n", xmfa);
+     	        if (!quiet)
+		    printf("Loading %s...\n", xmfa);
 		hio.loadXmfa(xmfa, vcf == 0);
 	}
 	
@@ -83,8 +95,16 @@ int main(int argc, const char * argv[])
 	
 	if ( outSnp )
 	{
-		printf("Writing %s...\n", outSnp);
+           	if (!quiet)
+		    printf("Writing %s...\n", outSnp);
 		hio.writeSnp(outSnp);
+	}
+
+	if ( outVcf )
+	{
+	        if (!quiet)
+		    printf("Writing %s...\n", outVcf);
+		hio.writeVcf(outVcf);
 	}
 	
     return 0;

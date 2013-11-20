@@ -23,6 +23,7 @@ public:
 	
 	void writeHarvest(const char * file);
 	void writeSnp(const char * file, bool indels = false);
+	void writeVcf(const char * file, bool indels = false);
 	
 	Harvest harvest;
 	

@@ -500,6 +500,110 @@ void HarvestIO::writeSnp(const char * file, bool indels)
 	out.close();
 }
 
+void HarvestIO::writeVcf(const char * file, bool indels)
+{
+        //tjt: Currently outputs SNPs, no indels
+        //tjt: next pass will add standard VCF output for indels, plus an attempt at qual vals
+        //tjt: also filters need to be added to findVariants to populate FILTer column
+
+        //indel char, to skip columns with indels (for now)
+        char indl = '-';
+        //the VCF output file
+	ofstream out(file);
+
+        //the reference sequence
+	string refseq;
+        refseq = harvest.reference().references(0).sequence();
+
+        //the VCF header line (skipping previous lines for simplicity, can/will add in later)
+        //#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  AA1 
+        out << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t";
+
+
+        int i = 0;
+        //output the file name for each column
+	for ( i = 0; i < harvest.tracks().tracks_size()-1; i++ )
+	{
+            const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
+	    out << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << '\t';
+    	    
+	}
+        //grab the last one and add a new line to avoid extra tab at end of line
+        const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
+        out << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << '\n';
+        
+        
+        //now iterate over variants and output
+	for ( int j = 0; j < harvest.variation().variants_size(); j++ )
+	{
+          
+	  const Harvest::Variation::Variant & msgSnp = harvest.variation().variants(j);
+
+          //no indels for now..
+          if (harvest.variation().variants(j).alleles()[0] == indl)
+	    continue;
+          if (find(harvest.variation().variants(j).alleles().begin(), harvest.variation().variants(j).alleles().end(),indl) != harvest.variation().variants(j).alleles().end())
+            continue;
+
+          //capture the reference position of variant
+	  int pos = msgSnp.position();
+          
+          //output first few columns, including context (+/- 7bp for now)
+	  out << "1\t" << pos << "\t" << refseq.substr(pos-7,7) << "." << refseq.substr(pos+7,7);
+          
+	  //build non-redundant allele list from cur alleles
+          vector<char> allele_list;
+          //first allele is ref allele (0)
+          allele_list.push_back(harvest.variation().variants(j).alleles()[0]);
+          bool prev_var = false;
+	  for ( int i = 0; i < harvest.tracks().tracks_size(); i++ )
+	  {
+	    if (find(allele_list.begin(), allele_list.end(), harvest.variation().variants(j).alleles()[i]) == allele_list.end())
+	    {
+              if (harvest.variation().variants(j).alleles()[i] == indl) 
+		continue;
+              //to know if we need to output a preceding comma
+              if (!prev_var)
+                  out << harvest.variation().variants(j).alleles()[i];
+              else
+		out << "," << harvest.variation().variants(j).alleles()[i];
+
+              allele_list.push_back(harvest.variation().variants(j).alleles()[i]);
+              prev_var = true;
+	    }
+            //to see if we are in REF column
+            else if (i == 0)
+	    {
+		out << "\t" << harvest.variation().variants(j).alleles()[i] << "\t";
+	    }
+	  }
+          //below values, punt for now, fill in with actual values later..
+          //QUAL
+          out << "\t40";
+          //FILT
+          out << "\tNA";
+          //INFO
+          out << "\tNA";
+          //FORMAT
+          out << "\tGT";
+
+          //catch last one for newline
+          int i = 0;
+          //now get allele index and output. must be an easier way than this? I've been spoiled by python it seems..
+	  for (i = 0; i < harvest.tracks().tracks_size()-1; i++ )
+	  {
+	    int idx = distance(allele_list.begin(),(find(allele_list.begin(), allele_list.end(), harvest.variation().variants(j).alleles()[i])));
+            out << "\t" << idx;
+            
+	  }
+	  int idx = distance(allele_list.begin(),(find(allele_list.begin(), allele_list.end(), harvest.variation().variants(j).alleles()[i])));
+          out << "\t" << idx << "\n";
+		
+	}
+	//done! should be well-formated VCF (see above notes)
+	out.close();
+}
+
 void HarvestIO::findVariants(const vector<string> & seqs, int position)
 {
 	Harvest::Variation * msg = harvest.mutable_variation();

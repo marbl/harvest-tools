@@ -24,7 +24,7 @@ void HarvestIO::loadFasta(const char * file)
 	
 	while ( ! in.eof() )
 	{
-		in.getline(line, 1 << 20 - 1);
+		in.getline(line, (1 << 20) - 1);
 		
 		if ( *line == '>' )
 		{
@@ -46,7 +46,7 @@ void HarvestIO::loadGenbank(const char * file)
 	char line[1 << 20];
 	Harvest::AnnotationList::Annotation * msgAnn;
 	
-	while ( in.getline(line, 1 << 20 - 1) )
+	while ( in.getline(line, (1 << 20) - 1) )
 	{
 		if ( in.eof() )
 		{
@@ -62,7 +62,7 @@ void HarvestIO::loadGenbank(const char * file)
 	
 	while ( ! in.eof() )
 	{
-		in.getline(line, 1 << 20 - 1);
+		in.getline(line, (1 << 20) - 1);
 		
 		char * token = line;
 		char * suffix;
@@ -125,7 +125,7 @@ void HarvestIO::loadGenbank(const char * file)
 				
 				while ( suffix[strlen(suffix) - 1] != '"' )
 				{
-					in.getline(line, 1 << 20 - 1);
+					in.getline(line, (1 << 20) - 1);
 					suffix = line;
 					
 					while ( *suffix == ' ' )
@@ -190,7 +190,7 @@ void HarvestIO::loadMFA(const char * file)
 		
 		if ( in.peek() == '>' )
 		{
-			in.getline(line, 1 << 20 - 1);
+			in.getline(line, (1 << 20) - 1);
 			string tag(strtok(line + 1, " "));
 			string desc(strtok(0, "\n"));
 			
@@ -204,7 +204,7 @@ void HarvestIO::loadMFA(const char * file)
 			seqs.resize(seqs.size() + 1);
 		}
 		
-		in.getline(line, 1 << 20 - 1);
+		in.getline(line, (1 << 20) - 1);
 		seqs[seqs.size() - 1].append(line);
 	}
 	
@@ -235,7 +235,7 @@ void HarvestIO::loadNewick(const char * file)
 	
 	bool useNames = ! harvest.has_tracks() || harvest.tracks().tracks_size() == 0;
 	
-	while ( in.getline(line, 1 << 20 - 1) )
+	while ( in.getline(line, (1 << 20) - 1) )
 	{
 		loadNewickNode(line, harvest.mutable_tree()->mutable_root(), useNames);
 	}
@@ -256,7 +256,7 @@ void HarvestIO::loadVcf(const char * file)
 	{
 		if ( in.peek() == '#' )
 		{
-			in.getline(line, 1 << 20 - 1);
+			in.getline(line, (1 << 20) - 1);
 			
 			if ( strncmp(line, "##FILTER", 8) == 0 )
 			{
@@ -287,7 +287,7 @@ void HarvestIO::loadVcf(const char * file)
 		}
 		else
 		{
-			in.getline(line, 1 << 20 - 1);
+			in.getline(line, (1 << 20) - 1);
 			
 			if ( in.eof() )
 			{
@@ -375,7 +375,7 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 	
 	while ( ! in.eof() )
 	{
-		in.getline(line, 1 << 20 - 1);
+		in.getline(line, (1 << 20) - 1);
 		
 		if ( *line == '#' )
 		{
@@ -609,6 +609,7 @@ char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg, bool u
 						*(token - 1) = 0;
 					}
 					
+					printf("leaf: %s\n", valueStart);
 					if ( state == STATE_nameInternal )
 					{
 						msg->set_bootstrap(atof(valueStart));

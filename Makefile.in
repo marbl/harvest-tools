@@ -3,7 +3,7 @@ flags=-Ipb -I@protobuf@/include
 all : harvest libharvest.a
 
 harvest : harvest.o libharvest.a
-	gcc ${flags} -o harvest -lstdc++ -lz harvest.o libharvest.a @protobuf@/lib/libprotobuf.a
+	gcc ${flags} -o harvest -stdlib=libc++ -lc++ -lz harvest.o libharvest.a @protobuf@/lib/libprotobuf.a
 
 libharvest.a : HarvestIO.o pb/harvest.pb.o
 	ar -cr libharvest.a HarvestIO.o pb/harvest.pb.o

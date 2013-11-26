@@ -16,6 +16,51 @@ HarvestIO::HarvestIO()
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 }
 
+void HarvestIO::loadBed(const char * file)
+{
+	ifstream in(file);
+	char line[1 << 20];
+	int i = 0;
+	google::protobuf::uint64 flag = 2 << harvest.variation().filters_size();
+	
+	Harvest::Variation::Filter * msgFilter = harvest.mutable_variation()->add_filters();
+	
+	msgFilter->set_flag(flag);
+	msgFilter->set_name("REC");
+	msgFilter->set_description("Recombination filter");
+	
+	while ( ! in.eof() )
+	{
+		in.getline(line, (1 << 20) - 1);
+		
+		if ( in.eof() )
+		{
+			break;
+		}
+		
+		strtok(line, "\t"); // eat chromosome
+		
+		int start = atoi(strtok(0, "\t")) - 1;
+		int end = atoi(strtok(0, "\t")) - 1;
+		
+		// seek to interval start
+		//
+		while ( i < harvest.variation().variants_size() && harvest.variation().variants(i).position() < start )
+		{
+			i++;
+		}
+		
+		// set flags through interval
+		//
+		while ( i < harvest.variation().variants_size() && harvest.variation().variants(i).position() <= end )
+		{
+			Harvest::Variation::Variant * msgVariant = harvest.mutable_variation()->mutable_variants(i);
+			msgVariant->set_filters(msgVariant->filters() | flag);
+			i++;
+		}
+	}
+}
+
 void HarvestIO::loadFasta(const char * file)
 {
 	ifstream in(file);
@@ -369,6 +414,15 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 	int track = 0;
 	vector<string> seqs;
 	
+	if ( variants )
+	{
+		Harvest::Variation::Filter * msgFilter = harvest.mutable_variation()->add_filters();
+	
+		msgFilter->set_flag(1);
+		msgFilter->set_name("IND");
+		msgFilter->set_description("Indel");
+	}
+	
 	Harvest::Alignment * msgAlignment = harvest.mutable_alignment();
 	Harvest::TrackList * msgTracks = harvest.mutable_tracks();
 	Harvest::Alignment::Lcb * msgLcb;
@@ -713,7 +767,7 @@ char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg, bool u
 						*(token - 1) = 0;
 					}
 					
-					printf("leaf: %s\n", valueStart);
+					//printf("leaf: %s\n", valueStart);
 					if ( state == STATE_nameInternal )
 					{
 						msg->set_bootstrap(atof(valueStart));

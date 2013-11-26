@@ -13,6 +13,7 @@ public:
 
 	HarvestIO();
 	
+	void loadBed(const char * file);
 	void loadFasta(const char * file);
 	void loadGenbank(const char * file);
 	bool loadHarvest(const char * file);

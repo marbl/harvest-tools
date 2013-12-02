@@ -23,8 +23,10 @@ public:
 	void loadXmfa(const char * file, bool variants = false);
 	
 	void writeHarvest(const char * file);
-	void writeSnp(const char * file, bool indels = false);
-	void writeVcf(const char * file, bool indels = false);
+	void writeNewick(std::ostream &out);
+	void writeSnp(std::ostream &out, bool indels = false);
+	void writeVcf(std::ostream &out, bool indels = false);
+	void writeXmfa(std::ostream &out, bool split = false);
 	
 	Harvest harvest;
 	

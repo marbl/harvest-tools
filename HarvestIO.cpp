@@ -1,4 +1,5 @@
 
+
 #include "HarvestIO.h"
 
 #include <google/protobuf/io/gzip_stream.h>
@@ -518,9 +519,20 @@ void HarvestIO::writeHarvest(const char * file)
 	close(fd);
 }
 
-void HarvestIO::writeSnp(const char * file, bool indels)
+
+void HarvestIO::writeNewick(std::ostream &out)
 {
-	ofstream out(file);
+  //punt for now
+
+
+}
+void HarvestIO::writeXmfa(std::ostream &out, bool split)
+{
+  //punt for now
+
+}
+void HarvestIO::writeSnp(std::ostream &out, bool indels)
+{
 	int wrap = 80;
 	int col;
 	
@@ -551,10 +563,9 @@ void HarvestIO::writeSnp(const char * file, bool indels)
 		out << '\n';
 	}
 	
-	out.close();
 }
 
-void HarvestIO::writeVcf(const char * file, bool indels)
+void HarvestIO::writeVcf(std::ostream &out, bool indels)
 {
         //tjt: Currently outputs SNPs, no indels
         //tjt: next pass will add standard VCF output for indels, plus an attempt at qual vals
@@ -563,7 +574,6 @@ void HarvestIO::writeVcf(const char * file, bool indels)
         //indel char, to skip columns with indels (for now)
         char indl = '-';
         //the VCF output file
-	ofstream out(file);
 
         //the reference sequence
 	string refseq;
@@ -655,7 +665,7 @@ void HarvestIO::writeVcf(const char * file, bool indels)
 		
 	}
 	//done! should be well-formated VCF (see above notes)
-	out.close();
+	//out.close();
 }
 
 void HarvestIO::findVariants(const vector<string> & seqs, int position)

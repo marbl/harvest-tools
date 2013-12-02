@@ -7,6 +7,7 @@
 //
 
 #include <iostream>
+#include <fstream>
 #include "HarvestIO.h"
 
 using namespace::std;
@@ -26,7 +27,8 @@ int main(int argc, const char * argv[])
 	const char * outVcf = 0;
 	bool help = false;
 	bool quiet = false;
-	
+        //stdout flag
+        string out1("-");	
 	for ( int i = 0; i < argc; i++ )
 	{
 		if ( argv[i][0] == '-' )
@@ -124,14 +126,31 @@ int main(int argc, const char * argv[])
 	{
 		if (!quiet)
 			printf("Writing %s...\n", outSnp);
-		hio.writeSnp(outSnp);
+		std::ostream* fp = &cout;
+		std::ofstream fout;
+
+		if (out1.compare(outSnp) != 0) 
+                {
+		  fout.open(outSnp);
+		  fp = &fout;
+		}
+		hio.writeSnp(*fp);
 	}
 
 	if ( outVcf )
 	{
 		if (!quiet)
 			printf("Writing %s...\n", outVcf);
-		hio.writeVcf(outVcf);
+
+		std::ostream* fp = &cout;
+		std::ofstream fout;
+		if (out1.compare(outVcf) != 0) 
+                {
+		  fout.open(outVcf);
+		  fp = &fout;
+		}
+		hio.writeVcf(*fp);
+
 	}
 	
     return 0;

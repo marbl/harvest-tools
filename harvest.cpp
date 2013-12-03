@@ -26,6 +26,8 @@ int main(int argc, const char * argv[])
 	const char * outNewick = 0;
 	const char * outSnp = 0;
 	const char * outVcf = 0;
+	const char * outBB = 0;
+	const char * outXmfa = 0;
 	bool help = false;
 	bool quiet = false;
 	
@@ -39,6 +41,7 @@ int main(int argc, const char * argv[])
 			switch ( argv[i][1] )
 			{
 				case 'b': bed = argv[++i]; break;
+				case 'B': outBB = argv[++i]; break;
 				case 'f': fasta = argv[++i]; break;
 				case 'g': genbank = argv[++i]; break;
 				case 'h': help = true; break;
@@ -52,6 +55,7 @@ int main(int argc, const char * argv[])
 				case 'V': outVcf = argv[++i]; break;
 				case 'v': vcf = argv[++i]; break;
 				case 'x': xmfa = argv[++i]; break;
+				case 'X': outXmfa = argv[++i]; break;
 			}
 		}
 	}
@@ -61,6 +65,7 @@ int main(int argc, const char * argv[])
 		cout << "harVest usage: harvest " << endl;
 		cout << "   -i <harvest input>" << endl;
 		cout << "   -b <bed filter intervals>" << endl;
+		cout << "   -B <output backbone intervals>" << endl;
 		cout << "   -f <reference fasta>" << endl;
 		cout << "   -g <reference genbank>" << endl;
 		cout << "   -n <Newick tree input>" << endl;
@@ -70,6 +75,7 @@ int main(int argc, const char * argv[])
 		cout << "   -v <VCF input>" << endl;
 		cout << "   -V <VCF output>" << endl;
 		cout << "   -x <xmfa alignment file>" << endl;
+		cout << "   -X <output xmfa alignment file>" << endl;
 		cout << "   -h (show this help)" << endl;
 		cout << "   -q (quiet mode)" << endl;
 		exit(0);
@@ -157,6 +163,37 @@ int main(int argc, const char * argv[])
 		}
 		
 		hio.writeSnp(*fp);
+	}
+
+	if ( outBB )
+	{
+		if (!quiet) printf("Writing %s...\n", outBB);
+		
+		std::ostream* fp = &cout;
+		std::ofstream fout;
+		
+		if (out1.compare(outBB) != 0) 
+		{
+			fout.open(outBB);
+			fp = &fout;
+		}
+		
+		hio.writeBackbone(*fp);
+	}
+	if ( outXmfa )
+	{
+		if (!quiet) printf("Writing %s...\n", outXmfa);
+		
+		std::ostream* fp = &cout;
+		std::ofstream fout;
+		
+		if (out1.compare(outXmfa) != 0) 
+		{
+			fout.open(outXmfa);
+			fp = &fout;
+		}
+		
+		hio.writeXmfa(*fp);
 	}
 
 	if ( outVcf )

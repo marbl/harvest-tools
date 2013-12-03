@@ -26,6 +26,7 @@ message Harvest
 			optional string file = 1;
 			optional string name = 2;
 			optional Type type = 3;
+			optional uint32 size = 4;
 		}
 		
 		repeated Track tracks = 1;
@@ -42,6 +43,7 @@ message Harvest
 		}
 		
 		optional Node root = 1;
+                optional string newick = 2;
 	}
 	
 	message Alignment
@@ -62,6 +64,7 @@ message Harvest
 			optional string name = 4;
 			optional float concordance = 5;
 			optional Tree tree = 6;
+			optional uint32 length = 7;
 		}
 		
 		repeated Lcb lcbs = 1;

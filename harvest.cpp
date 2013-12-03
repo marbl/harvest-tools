@@ -23,12 +23,15 @@ int main(int argc, const char * argv[])
 	const char * newick = 0;
 	const char * vcf = 0;
 	const char * xmfa = 0;
+	const char * outNewick = 0;
 	const char * outSnp = 0;
 	const char * outVcf = 0;
 	bool help = false;
 	bool quiet = false;
-        //stdout flag
-        string out1("-");	
+	
+	//stdout flag
+	string out1("-");
+	
 	for ( int i = 0; i < argc; i++ )
 	{
 		if ( argv[i][0] == '-' )
@@ -42,6 +45,7 @@ int main(int argc, const char * argv[])
 				case 'i': input = argv[++i]; break;
 				case 'm': mfa = argv[++i]; break;
 				case 'n': newick = argv[++i]; break;
+				case 'N': outNewick = argv[++i]; break;
 				case 'o': output = argv[++i]; break;
 				case 'q': quiet = true; break;
 				case 'S': outSnp = argv[++i]; break;
@@ -54,20 +58,21 @@ int main(int argc, const char * argv[])
 	
 	if (help || argc < 2)
 	{
-	  cout << "harVest usage: harvest " << endl;
-	  cout << "   -i <harvest input>" << endl;
-	  cout << "   -b <bed filter intervals>" << endl;
-	  cout << "   -f <reference fasta>" << endl;
-	  cout << "   -g <reference genbank>" << endl;
-	  cout << "   -n <newick tree>" << endl;
-	  cout << "   -o <hvt output>" << endl;
-	  cout << "   -S <output for multi-fasta SNPs>" << endl;
-	  cout << "   -V <output for VCF>" << endl;
-	  cout << "   -v <input VCF>" << endl;
-	  cout << "   -x <xmfa alignment file>" << endl;
-	  cout << "   -h (show this help)" << endl;
-	  cout << "   -q (quiet mode)" << endl;
-	  exit(0);
+		cout << "harVest usage: harvest " << endl;
+		cout << "   -i <harvest input>" << endl;
+		cout << "   -b <bed filter intervals>" << endl;
+		cout << "   -f <reference fasta>" << endl;
+		cout << "   -g <reference genbank>" << endl;
+		cout << "   -n <Newick tree input>" << endl;
+		cout << "   -N <Newick tree output>" << endl;
+		cout << "   -o <hvt output>" << endl;
+		cout << "   -S <output for multi-fasta SNPs>" << endl;
+		cout << "   -v <VCF input>" << endl;
+		cout << "   -V <VCF output>" << endl;
+		cout << "   -x <xmfa alignment file>" << endl;
+		cout << "   -h (show this help)" << endl;
+		cout << "   -q (quiet mode)" << endl;
+		exit(0);
 	}
 	
 	HarvestIO hio;
@@ -122,33 +127,51 @@ int main(int argc, const char * argv[])
 		hio.writeHarvest(output);
 	}
 	
-	if ( outSnp )
+	if ( outNewick )
 	{
-		if (!quiet)
-			printf("Writing %s...\n", outSnp);
+		if (!quiet) printf("Writing %s...\n", outNewick);
+		
 		std::ostream* fp = &cout;
 		std::ofstream fout;
-
-		if (out1.compare(outSnp) != 0) 
-                {
-		  fout.open(outSnp);
-		  fp = &fout;
+		
+		if (out1.compare(outNewick) != 0) 
+		{
+			fout.open(outNewick);
+			fp = &fout;
 		}
+		
+		hio.writeNewick(*fp);
+	}
+	
+	if ( outSnp )
+	{
+		if (!quiet) printf("Writing %s...\n", outSnp);
+		
+		std::ostream* fp = &cout;
+		std::ofstream fout;
+		
+		if (out1.compare(outSnp) != 0) 
+		{
+			fout.open(outSnp);
+			fp = &fout;
+		}
+		
 		hio.writeSnp(*fp);
 	}
 
 	if ( outVcf )
 	{
-		if (!quiet)
-			printf("Writing %s...\n", outVcf);
-
+		if (!quiet) printf("Writing %s...\n", outVcf);
+		
 		std::ostream* fp = &cout;
 		std::ofstream fout;
+		
 		if (out1.compare(outVcf) != 0) 
-                {
-		  fout.open(outVcf);
-		  fp = &fout;
+		{
+			fout.open(outVcf);
+			fp = &fout;
 		}
+		
 		hio.writeVcf(*fp);
 
 	}

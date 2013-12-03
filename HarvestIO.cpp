@@ -503,7 +503,7 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 	in.close();
 }
 
-void HarvestIO::writeHarvest(const char * file)
+void HarvestIO::writeHarvest(const char * file) const
 {
 	int fd = open(file, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 	FileOutputStream stream(fd);
@@ -519,19 +519,25 @@ void HarvestIO::writeHarvest(const char * file)
 	close(fd);
 }
 
+void HarvestIO::writeNewick(std::ostream &out) const
+{
+	if ( ! harvest.has_tree() )
+	{
+		printf("Cannot write Newick; no tree loaded.\n");
+		exit(1);
+	}
+	
+	writeNewickNode(out, harvest.tree().root());
+	out << ";\n";
+}
 
-void HarvestIO::writeNewick(std::ostream &out)
+void HarvestIO::writeXmfa(std::ostream &out, bool split) const
 {
   //punt for now
 
-
 }
-void HarvestIO::writeXmfa(std::ostream &out, bool split)
-{
-  //punt for now
 
-}
-void HarvestIO::writeSnp(std::ostream &out, bool indels)
+void HarvestIO::writeSnp(std::ostream &out, bool indels) const
 {
 	int wrap = 80;
 	int col;
@@ -565,7 +571,7 @@ void HarvestIO::writeSnp(std::ostream &out, bool indels)
 	
 }
 
-void HarvestIO::writeVcf(std::ostream &out, bool indels)
+void HarvestIO::writeVcf(std::ostream &out, bool indels) const
 {
         //tjt: Currently outputs SNPs, no indels
         //tjt: next pass will add standard VCF output for indels, plus an attempt at qual vals
@@ -819,6 +825,43 @@ char * HarvestIO::loadNewickNode(char * token, Harvest::Tree::Node * msg, bool u
 	}
 	
 	return token;
+}
+
+void HarvestIO::writeNewickNode(std::ostream &out, const Harvest::Tree::Node & msg) const
+{
+	if ( msg.children_size() )
+	{
+		out << '(';
+	}
+	
+	for ( int i = 0; i < msg.children_size(); i++ )
+	{
+		writeNewickNode(out, msg.children(i));
+		
+		if ( i < msg.children_size() - 1 )
+		{
+			out << ',';
+		}
+	}
+	
+	if ( msg.children_size() )
+	{
+		out << ')';
+		
+		if ( msg.has_bootstrap() )
+		{
+			out << msg.bootstrap();
+		}
+	}
+	else
+	{
+		out << '\'' << harvest.tracks().tracks(msg.track()).file() << '\'';
+	}
+	
+	if ( msg.has_branchlength() )
+	{
+		out << ':' << msg.branchlength();
+	}
 }
 
 char * removePrefix(char * string, const char * substring)

@@ -22,11 +22,11 @@ public:
 	void loadVcf(const char * file);
 	void loadXmfa(const char * file, bool variants = false);
 	
-	void writeHarvest(const char * file);
-	void writeNewick(std::ostream &out);
-	void writeSnp(std::ostream &out, bool indels = false);
-	void writeVcf(std::ostream &out, bool indels = false);
-	void writeXmfa(std::ostream &out, bool split = false);
+	void writeHarvest(const char * file) const;
+	void writeNewick(std::ostream &out) const;
+	void writeSnp(std::ostream &out, bool indels = false) const;
+	void writeVcf(std::ostream &out, bool indels = false) const;
+	void writeXmfa(std::ostream &out, bool split = false) const;
 	
 	Harvest harvest;
 	
@@ -44,6 +44,7 @@ private:
 	
 	void findVariants(const std::vector<std::string> & seqs, int position = 0);
 	char * loadNewickNode(char * token, Harvest::Tree::Node * msg, bool useNames);
+	void writeNewickNode(std::ostream &out, const Harvest::Tree::Node & msg) const;
 	
 	std::map<std::string, google::protobuf::uint32> tracksByFile;
 };

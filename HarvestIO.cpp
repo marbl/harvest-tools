@@ -1006,20 +1006,17 @@ void HarvestIO::writeNewickNode(std::ostream &out, const Harvest::Tree::Node & m
 	if ( msg.children_size() )
 	{
 		out << '(';
-	}
-	
-	for ( int i = 0; i < msg.children_size(); i++ )
-	{
-		writeNewickNode(out, msg.children(i));
 		
-		if ( i < msg.children_size() - 1 )
+		for ( int i = 0; i < msg.children_size(); i++ )
 		{
-			out << ',';
+			writeNewickNode(out, msg.children(i));
+		
+			if ( i < msg.children_size() - 1 )
+			{
+				out << ',';
+			}
 		}
-	}
-	
-	if ( msg.children_size() )
-	{
+		
 		out << ')';
 		
 		if ( msg.has_bootstrap() )

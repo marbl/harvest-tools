@@ -27,6 +27,7 @@ public:
 	void writeSnp(std::ostream &out, bool indels = false) const;
 	void writeVcf(std::ostream &out, bool indels = false) const;
 	void writeXmfa(std::ostream &out, bool split = false) const;
+	void writeBackbone(std::ostream &out) const;
 	
 	Harvest harvest;
 	

@@ -477,7 +477,7 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 			msgRegion->set_track(track);
 			msgRegion->set_position(atoi(strtok(0, "-")));
 			google::protobuf::uint32 end = atoi(strtok(0, " "));
-			msgRegion->set_length(end - msgRegion->position());
+			msgRegion->set_length(end - msgRegion->position() + 1);
 			msgRegion->set_reverse(*strtok(0, " ") == '-');
                         
 		        
@@ -573,86 +573,134 @@ void HarvestIO::writeXmfa(std::ostream &out, bool split) const
 ##SequenceHeader >gi|76577973|gb|CP000124.1| Burkholderia pseudomallei 1710b chromosome I, complete sequence
 ##SequenceLength 4126292bp
 */
-        out << "#FormatVersion ParSNP v1.0" << endl;
-        out << "#SequenceCount " << harvest.tracks().tracks_size() << endl;
-        
-        int i  =0;
-        for ( i = 0; i < harvest.tracks().tracks_size(); i++ )
-        {
-
-  	    const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
-            out << "##SequenceIndex " << i+1 << endl;
-            out << "##SequenceFile " << msgTrack.file() << endl;
-            out << "##SequenceHeader " << msgTrack.name() << endl;
-            //out << "##SequenceLength " << msgTrack.size() << "bp" << endl;
-	}
-
-        out << "#IntervalCount " << harvest.alignment().lcbs_size() << endl;
-
-        //now iterate over alignments
-	const Harvest::Alignment & msgAlignment = harvest.alignment();
-        int totrefgaps = 0;
-        for ( int j = 0; j < msgAlignment.lcbs_size(); j++ )
+	out << "#FormatVersion ParSNP v1.0" << endl;
+	out << "#SequenceCount " << harvest.tracks().tracks_size() << endl;
+	
+	for ( int i = 0; i < harvest.tracks().tracks_size(); i++ )
 	{
-        
-  	    const Harvest::Alignment::Lcb & msgLcb = msgAlignment.lcbs(j);
-            int r = 0;
-            int refstart = 0;
-            int refend = 0;
-            
-            for (r= 0; r < msgLcb.regions_size(); r++)
-	    {
-	          //>1:8230-11010 + cluster174 s1:p8230
-  	          const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(r);
-	          const Harvest::Alignment::Lcb::Region & msgRegion = msgLcb.regions(r);
-                  int start = msgRegion.position();
-                  int end = msgRegion.position()+msgRegion.length();
-                  if (r == 0)
-		    refstart = start;
-
-	          out << ">" << r+1 << ":" << start << "-" << end << " ";
-                  
-                  if (!msgRegion.reverse())
-		  {
-		    out << "+ ";
-		  }
-                  else
-		  {
-		    out << "- ";
-		  }
-                  out << "cluster" << j+1 << endl;
-		  google::protobuf::uint32 currpos = 0;
-                  int width = 80;
-                  int currvar = 0;
-		  //var =  harvest.variation().variants(currvar);//.alleles()[r];
-                  //string ref_slice(harvest.reference().references(0).sequence().substr(refstart,(end-start)+1));
-         
-                  while (currpos < msgLcb.length() && currpos+refstart < harvest.reference().references(0).sequence().size())
-		  {
-                    //cout << currpos+refstart << ":" << harvest.reference().references(0).sequence().size() << endl;
-                    if (currpos+refstart != harvest.variation().variants(currvar).position())
-		    {
-		      out << harvest.reference().references(0).sequence().substr(currpos+refstart,1);
-		    }
-                    else
-		    {
-                      out << harvest.variation().variants(currvar).alleles()[r];
-                      if (harvest.variation().variants(currvar).alleles()[r] == '-')
-		      { 
-                        //currpos-=1;
-			//endpos+=1;
-		      }
-                      currvar +=1;
-		    }
-                    currpos+=1;
-                     
-		  }
-                  out << endl;
-	    }
-            out << "=" << endl;
-
+		const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
+		out << "##SequenceIndex " << i+1 << endl;
+		out << "##SequenceFile " << msgTrack.file() << endl;
+		out << "##SequenceHeader " << msgTrack.name() << endl;
+		
+		if ( msgTrack.has_size() )
+		{
+			out << "##SequenceLength " << msgTrack.size() << "bp" << endl;
+		}
 	}
-        
+	
+	out << "#IntervalCount " << harvest.alignment().lcbs_size() << endl;
+	
+	//now iterate over alignments
+	const Harvest::Alignment & msgAlignment = harvest.alignment();
+	int totrefgaps = 0;
+	int currvar = 0;
+	
+	for ( int j = 0; j < msgAlignment.lcbs_size(); j++ )
+	{
+		
+		const Harvest::Alignment::Lcb & msgLcb = msgAlignment.lcbs(j);
+		int refstart = msgLcb.regions(0).position();
+		int refend = 0;
+		int blockVarStart;
+		
+		for ( int r= 0; r < msgLcb.regions_size(); r++)
+		{
+			//>1:8230-11010 + cluster174 s1:p8230
+			const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(r);
+			const Harvest::Alignment::Lcb::Region & msgRegion = msgLcb.regions(r);
+			int start = msgRegion.position() + 1;
+			int end = start + msgRegion.length() - 1;
+			
+			if (r == 0)
+			{
+				blockVarStart = currvar;
+			}
+			else
+			{
+				currvar = blockVarStart;
+			}
+
+			out << ">" << r+1 << ":" << start << "-" << end << " ";
+			
+			if (!msgRegion.reverse())
+			{
+				out << "+ ";
+			}
+			else
+			{
+				out << "- ";
+			}
+			
+			out << "cluster" << j+1 << endl;
+			google::protobuf::uint32 currpos = refstart;
+			int width = 80;
+			int col = 0;
+			int variantsSize = harvest.variation().variants_size();
+			const Harvest::Variation::Variant * currvarref = & harvest.variation().variants(currvar);
+			
+			//var =  harvest.variation().variants(currvar);//.alleles()[r];
+			//string ref_slice(harvest.reference().references(0).sequence().substr(refstart,(end-start)+1));
+			
+			while
+			(
+				currpos - refstart < msgLcb.regions(0).length() ||
+				(
+					currvar < variantsSize &&
+					currvarref->position() - refstart < msgLcb.regions(0).length()
+				)
+			)
+			{
+				if ( currpos == harvest.reference().references(0).sequence().size() )
+				{
+					printf("ERROR: LCB %d extends beyond reference (position %d)\n", j, currpos);
+				}
+				
+				if ( col == width )
+				{
+					out << endl;
+					col = 0;
+				}
+				
+				if
+				(
+					currvar == variantsSize ||
+					currpos != currvarref->position() ||
+					(
+						currvarref->alleles()[0] == '-' &&
+						currvar > 0 &&
+						harvest.variation().variants(currvar - 1).position() != currpos
+					)
+				)
+				{
+					out << harvest.reference().references(0).sequence().substr(currpos,1);
+					col++;
+				}
+				
+				if ( currvar < variantsSize && currpos == currvarref->position() )
+				{
+					out << currvarref->alleles()[r];
+					currvar++;
+					
+					if ( currvar < variantsSize )
+					{
+						currvarref = & harvest.variation().variants(currvar);
+					}
+					
+					col++;
+				}
+				
+				if ( currvar == variantsSize || currvarref->position() > currpos )
+				{
+					currpos++;
+				}
+			}
+			out << endl;
+		}
+		out << "=" << endl;
+	
+	}
+		
 }
 
 void HarvestIO::writeBackbone(std::ostream &out) const
@@ -855,6 +903,12 @@ void HarvestIO::findVariants(const vector<string> & seqs, int position)
 	
 	col[seqs.size()] = 0;
 	
+	// Since insertions to the reference take on the left-most reference
+	// position, this allows the alignment to start with an insertion
+	// (possibly at reference position -1).
+	//
+	position--;
+	
 	for ( int i = 0; i < seqs[0].length(); i++ )
 	{
 		bool variant = false;
@@ -862,6 +916,11 @@ void HarvestIO::findVariants(const vector<string> & seqs, int position)
 		col[0] = seqs[0][i];
 		
 		bool indel = col[0] == '-';
+		
+		if ( ! indel )
+		{
+			position++;
+		}
 		
 		for ( int j = 1; j < seqs.size(); j++ )
 		{
@@ -886,11 +945,6 @@ void HarvestIO::findVariants(const vector<string> & seqs, int position)
 			variant->set_position(position);
 			variant->set_alleles(col);
 			variant->set_filters(indel ? 1 : 0);
-		}
-		
-		if ( col[0] != '-' )
-		{
-			position++;
 		}
 	}
 }

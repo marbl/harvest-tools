@@ -767,7 +767,7 @@ void HarvestIO::writeSnp(std::ostream &out, bool indels) const
 	for ( int i = 0; i < harvest.tracks().tracks_size(); i++ )
 	{
 		const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
-		out << '>' << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << '\n';
+		out << '>' << (msgTrack.has_file() ? msgTrack.file() : msgTrack.name()) << '\n';
 		col = 0;
 		
 		for ( int j = 0; j < harvest.variation().variants_size(); j++ )
@@ -841,7 +841,17 @@ void HarvestIO::writeVcf(std::ostream &out, bool indels) const
 	  int pos = msgSnp.position();
           
           //output first few columns, including context (+/- 7bp for now)
-	  out << "1\t" << pos << "\t" << refseq.substr(pos-7,7) << "." << refseq.substr(pos+7,7);
+          int ws = 10;
+          int lend = pos-ws;
+          int rend = ws;
+ 
+          if (lend < 0)
+	    lend = 0;
+          if (pos+ws >= refseq.size())
+            rend = refseq.size()-pos;
+          if (pos+rend >= refseq.size())
+            rend = 0;
+    	  out << "1\t" << pos << "\t" << refseq.substr(lend,ws) << "." << refseq.substr(pos,rend);
           
 	  //build non-redundant allele list from cur alleles
           vector<char> allele_list;

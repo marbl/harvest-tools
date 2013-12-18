@@ -91,95 +91,118 @@ void HarvestIO::loadGenbank(const char * file)
 	ifstream in(file);
 	char line[1 << 20];
 	Harvest::AnnotationList::Annotation * msgAnn;
-	
-	while ( in.getline(line, (1 << 20) - 1) )
-	{
-		if ( in.eof() )
-		{
-			printf("bad genbank\n");
-			return;
-		}
-		
-		if ( removePrefix(line, "FEATURES") )
-		{
-			break;
-		}
-	}
+	google::protobuf::uint32 sequence;
 	
 	while ( ! in.eof() )
 	{
-		in.getline(line, (1 << 20) - 1);
-		
-		char * token = line;
-		char * suffix;
-		
-		while ( *token == ' ' )
+		while ( in.getline(line, (1 << 20) - 1) )
 		{
-			token++;
+			if ( in.eof() )
+			{
+				//printf("bad genbank\n");
+				return;
+			}
+		
+			if ( removePrefix(line, "VERSION") )
+			{
+				if ( const char * giToken = strstr(line, " GI:") )
+				{
+					long int gi = atol(giToken + 4);
+					sequence = getReferenceSequenceFromGi(gi);
+				
+					if ( sequence == undef )
+					{
+						printf("Couldn't find GI %ld in reference.\n", gi);
+						return;
+					}
+				}
+			}
+			else if ( removePrefix(line, "FEATURES") )
+			{
+				break;
+			}
 		}
-		
-		if ( token == line + 5 && (suffix = removePrefix(token, "gene")) )
+	
+		while ( ! in.eof() )
 		{
-			token = suffix;
-			
+			in.getline(line, (1 << 20) - 1);
+		
+			if ( in.eof() || strcmp(line, "//") == 0 )
+			{
+				break;
+			}
+		
+			char * token = line;
+			char * suffix;
+		
 			while ( *token == ' ' )
 			{
 				token++;
 			}
-			
-			msgAnn = harvest.mutable_annotations()->add_annotations();
-			msgAnn->set_sequence(0);
-			suffix = removePrefix(token, "complement(");
-			msgAnn->set_reverse(suffix);
-			
-			if ( suffix )
+		
+			if ( token == line + 5 && (suffix = removePrefix(token, "gene")) )
 			{
 				token = suffix;
-			}
 			
-			suffix = removePrefix(token, "join(");
-			
-			if ( suffix )
-			{
-				token = suffix;
-			}
-			
-			msgAnn->add_regions();
-			msgAnn->mutable_regions(0)->set_start(atoi(strtok(token, ".")) - 1);
-			msgAnn->mutable_regions(0)->set_end(atoi(strtok(0, ".,)")) - 1);
-		}
-		else
-		{
-			char * suffix;
-			
-			if ( (suffix = removePrefix(token, "/locus_tag=\"")) )
-			{
-				msgAnn->set_locus(strtok(suffix, "\""));
-			}
-			else if ( (suffix = removePrefix(token, "/gene=\"")) )
-			{
-				msgAnn->set_name(strtok(suffix, "\""));
-			}
-			else if ( (suffix = removePrefix(token, "/product=\"")) )
-			{
-				msgAnn->set_description(suffix);
-				
-				if ( msgAnn->description()[msgAnn->description().length() - 1] == '"' )
+				while ( *token == ' ' )
 				{
-					msgAnn->mutable_description()->resize(msgAnn->description().length() - 1);
+					token++;
 				}
-				
-				while ( suffix[strlen(suffix) - 1] != '"' )
+			
+				msgAnn = harvest.mutable_annotations()->add_annotations();
+				msgAnn->set_sequence(sequence);
+				suffix = removePrefix(token, "complement(");
+				msgAnn->set_reverse(suffix);
+			
+				if ( suffix )
 				{
-					in.getline(line, (1 << 20) - 1);
-					suffix = line;
-					
-					while ( *suffix == ' ' )
+					token = suffix;
+				}
+			
+				suffix = removePrefix(token, "join(");
+			
+				if ( suffix )
+				{
+					token = suffix;
+				}
+			
+				msgAnn->add_regions();
+				msgAnn->mutable_regions(0)->set_start(atoi(strtok(token, ".")) - 1);
+				msgAnn->mutable_regions(0)->set_end(atoi(strtok(0, ".,)")) - 1);
+			}
+			else
+			{
+				char * suffix;
+			
+				if ( (suffix = removePrefix(token, "/locus_tag=\"")) )
+				{
+					msgAnn->set_locus(strtok(suffix, "\""));
+				}
+				else if ( (suffix = removePrefix(token, "/gene=\"")) )
+				{
+					msgAnn->set_name(strtok(suffix, "\""));
+				}
+				else if ( (suffix = removePrefix(token, "/product=\"")) )
+				{
+					msgAnn->set_description(suffix);
+				
+					if ( msgAnn->description()[msgAnn->description().length() - 1] == '"' )
 					{
-						suffix++;
+						msgAnn->mutable_description()->resize(msgAnn->description().length() - 1);
 					}
+				
+					while ( suffix[strlen(suffix) - 1] != '"' )
+					{
+						in.getline(line, (1 << 20) - 1);
+						suffix = line;
 					
-					msgAnn->mutable_description()->append(suffix - 1, strlen(suffix));
+						while ( *suffix == ' ' )
+						{
+							suffix++;
+						}
+					
+						msgAnn->mutable_description()->append(suffix - 1, strlen(suffix));
+					}
 				}
 			}
 		}
@@ -271,7 +294,25 @@ void HarvestIO::loadMFA(const char * file)
 		msgRegion->set_reverse(false);
 	}
 	
-	findVariants(seqs);
+	vector<const Variant *> vars;
+	
+	findVariants(seqs, vars, 0);
+	
+	Harvest::Variation * msgVar = harvest.mutable_variation();
+	
+	//sort(vars.begin(), vars.end(), variantLessThan);
+	
+	for ( int i = 0; i < vars.size(); i++ )
+	{
+		Harvest::Variation::Variant * variant = msgVar->add_variants();
+		
+		variant->set_sequence(vars[i]->sequence);
+		variant->set_position(vars[i]->position);
+		variant->set_alleles(vars[i]->alleles);
+		variant->set_filters(vars[i]->filters);
+		
+		delete vars[i];
+	}
 }
 
 void HarvestIO::loadNewick(const char * file)
@@ -343,7 +384,7 @@ void HarvestIO::loadVcf(const char * file)
 			
 			Harvest::Variation::Variant * variant = msg->add_variants();
 			
-			variant->set_sequence(atoi(strtok(line, "\t")));
+			variant->set_sequence(atoi(strtok(line, "\t")) - 1);
 			variant->set_position(atoi(strtok(0, "\t")) - 1);
 			strtok(0, "\t"); // eat id
 			char * alleles = strtok(0, "\t"); // ref allele
@@ -415,6 +456,7 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 	char line[1 << 20];
 	int track = 0;
 	vector<string> seqs;
+	vector<const Variant *> vars;
 	
 	if ( variants )
 	{
@@ -428,8 +470,9 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 	Harvest::Alignment * msgAlignment = harvest.mutable_alignment();
 	Harvest::TrackList * msgTracks = harvest.mutable_tracks();
 	Harvest::Alignment::Lcb * msgLcb;
-
+	
 	google::protobuf::uint32 lcb_length = 0;
+	
 	while ( ! in.eof() )
 	{
 		in.getline(line, (1 << 20) - 1);
@@ -445,17 +488,15 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 				tracksByFile[suffix] = track;
 				track++;
 			}
-
-			if ( (suffix = removePrefix(line, "##SequenceHeader ")) )
+			else if ( (suffix = removePrefix(line, "##SequenceHeader ")) )
 			{
-			        msgTracks->mutable_tracks(track-1)->set_name(suffix);
+				msgTracks->mutable_tracks(track-1)->set_name(suffix);
 			}
-
-			if ( (suffix = removePrefix(line, "##SequenceLength ")) )
+			else if ( (suffix = removePrefix(line, "##SequenceLength ")) )
 			{
-			        string length (suffix);
-                                string length_t (length.begin(),length.end()-2);
-			        msgTracks->mutable_tracks(track-1)->set_size(atoi(length_t.c_str()));
+				string length (suffix);
+				string length_t (length.begin(),length.end()-2);
+				msgTracks->mutable_tracks(track-1)->set_size(atoi(length_t.c_str()));
 			}
 		}
 		else if ( *line == '>' )
@@ -479,11 +520,11 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 			google::protobuf::uint32 end = atoi(strtok(0, " "));
 			msgRegion->set_length(end - msgRegion->position() + 1);
 			msgRegion->set_reverse(*strtok(0, " ") == '-');
-                        
-		        
+			
 			if ( track == 0 )
 			{
-				msgLcb->set_position(msgRegion->position());
+				msgLcb->set_sequence(getReferenceSequenceFromConcatenated(msgRegion->position()));
+				msgLcb->set_position(getPositionFromConcatenated(msgLcb->sequence(), msgRegion->position()));
 			}
 		}
 		else if ( variants && *line == '=' )
@@ -502,7 +543,7 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 			
 			if ( all )
 			{
-				findVariants(seqs, msgLcb->position());
+				findVariants(seqs, vars, msgLcb->sequence(), msgLcb->position());
 			}
 			
 			for ( int i = 0; i < seqs.size(); i++ )
@@ -514,21 +555,38 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 		{
 			seqs[track].append(line);
 		}
-                if ( *line != '=' && *line != '>' && *line != '#')
+		if ( *line != '=' && *line != '>' && *line != '#')
 		{
-		  if ( track == 0 )
-		    {
-		      lcb_length += strlen(line);
-		    }
-
+			if ( track == 0 )
+			{
+				lcb_length += strlen(line);
+			}
 		}
 		else if (*line == '=')
 		{
-                      msgLcb->set_length(lcb_length);
-                      lcb_length = 0;
-                 
+			msgLcb->set_length(lcb_length);
+			lcb_length = 0;
 		}
-                
+	}
+	
+	if ( variants )
+	{
+		Harvest::Variation * msgVar = harvest.mutable_variation();
+		
+		sort(vars.begin(), vars.end(), variantLessThan);
+		
+		for ( int i = 0; i < vars.size(); i++ )
+		{
+			Harvest::Variation::Variant * variant = msgVar->add_variants();
+			
+			variant->set_sequence(vars[i]->sequence);
+			variant->set_position(vars[i]->position);
+			variant->set_alleles(vars[i]->alleles);
+			variant->set_filters(vars[i]->filters);
+			
+			printf("VARIANT:\t%d\t%d\t%llu\t%d\t%s\n", variant->sequence(), variant->position(), variant->filters(), variant->quality(), variant->alleles().c_str());
+			delete vars[i];
+		}
 	}
 	
 	in.close();
@@ -851,7 +909,7 @@ void HarvestIO::writeVcf(std::ostream &out, bool indels) const
             rend = refseq.size()-pos;
           if (pos+rend >= refseq.size())
             rend = 0;
-    	  out << "1\t" << pos << "\t" << refseq.substr(lend,ws) << "." << refseq.substr(pos,rend);
+    	  out << msgSnp.sequence() + 1 << "\t" << pos << "\t" << refseq.substr(lend,ws) << "." << refseq.substr(pos,rend);
           
 	  //build non-redundant allele list from cur alleles
           vector<char> allele_list;
@@ -906,10 +964,63 @@ void HarvestIO::writeVcf(std::ostream &out, bool indels) const
 	//out.close();
 }
 
-void HarvestIO::findVariants(const vector<string> & seqs, int position)
+int HarvestIO::getPositionFromConcatenated(int sequence, long int position) const
 {
-	Harvest::Variation * msg = harvest.mutable_variation();
+	long int sum = 0;
+	
+	for ( int i = 0; i < sequence; i++ )
+	{
+		sum += harvest.reference().references(i).sequence().length();
+	}
+	
+	return position - sum;
+}
+
+google::protobuf::uint32 HarvestIO::getReferenceSequenceFromConcatenated(long int position) const
+{
+	long int sum = 0;
+	
+	for ( int i = 0; i < harvest.reference().references_size(); i++ )
+	{
+		sum += harvest.reference().references(i).sequence().length();
+		
+		if ( sum > position )
+		{
+			return i;
+		}
+	}
+	
+	return undef;
+}
+
+google::protobuf::uint32 HarvestIO::getReferenceSequenceFromGi(long int gi) const
+{
+	if ( ! harvest.has_reference() )
+	{
+		return undef;
+	}
+	
+	for ( int i = 0; i < harvest.reference().references_size(); i++ )
+	{
+		size_t giToken = harvest.reference().references(i).tag().find("gi|");
+		
+		if ( giToken != string::npos )
+		{
+			if ( gi == atol(harvest.reference().references(i).tag().c_str() + giToken + 3))
+			{
+				return i;
+			}
+		}
+	}
+	
+	return undef;
+}
+
+void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *> & vars, int sequence, int position)
+{
+//	Harvest::Variation * msg = harvest.mutable_variation();
 	char col[seqs.size() + 1];
+	int offset = 0;
 	
 	col[seqs.size()] = 0;
 	
@@ -927,9 +1038,15 @@ void HarvestIO::findVariants(const vector<string> & seqs, int position)
 		
 		bool indel = col[0] == '-';
 		
-		if ( ! indel )
+		if ( indel )
+		{
+			// insertion relative to the reference
+			offset++;
+		}
+		else
 		{
 			position++;
+			offset = 0;
 		}
 		
 		for ( int j = 1; j < seqs.size(); j++ )
@@ -949,12 +1066,35 @@ void HarvestIO::findVariants(const vector<string> & seqs, int position)
 		
 		if ( variant )
 		{
+			Variant * varNew = new Variant();
+			
+			while ( position >= harvest.reference().references(sequence).sequence().length() )
+			{
+				position -= harvest.reference().references(sequence).sequence().length();
+				sequence++;
+			}
+			
+			varNew->sequence = sequence;
+			varNew->position = position;
+			varNew->offset = offset;
+			varNew->alleles = col;
+			varNew->filters = indel ? 1 : 0;
+			varNew->quality = 0;
+			/*
 			Harvest::Variation::Variant * variant = msg->add_variants();
 			
-			variant->set_sequence(0);
+			while ( position >= harvest.reference().references(sequence).sequence().length() )
+			{
+				position -= harvest.reference().references(sequence).sequence().length();
+				sequence++;
+			}
+			
+			variant->set_sequence(sequence);
 			variant->set_position(position);
 			variant->set_alleles(col);
 			variant->set_filters(indel ? 1 : 0);
+			*/
+			vars.push_back(varNew);
 		}
 	}
 }

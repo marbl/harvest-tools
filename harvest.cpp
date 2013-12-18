@@ -18,7 +18,7 @@ int main(int argc, const char * argv[])
 	const char * output = 0;
 	const char * bed = 0;
 	const char * fasta = 0;
-	const char * genbank = 0;
+	vector<const char *> genbank;
 	const char * mfa = 0;
 	const char * newick = 0;
 	const char * vcf = 0;
@@ -43,7 +43,7 @@ int main(int argc, const char * argv[])
 				case 'b': bed = argv[++i]; break;
 				case 'B': outBB = argv[++i]; break;
 				case 'f': fasta = argv[++i]; break;
-				case 'g': genbank = argv[++i]; break;
+				case 'g': genbank.push_back(argv[++i]); break;
 				case 'h': help = true; break;
 				case 'i': input = argv[++i]; break;
 				case 'm': mfa = argv[++i]; break;
@@ -101,9 +101,9 @@ int main(int argc, const char * argv[])
 		hio.loadFasta(fasta);
 	}
 	
-	if ( genbank )
+	for ( int i = 0; i < genbank.size(); i++ )
 	{
-		hio.loadGenbank(genbank);
+		hio.loadGenbank(genbank[i]);
 	}
 	
 	if ( xmfa )

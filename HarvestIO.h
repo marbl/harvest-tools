@@ -11,6 +11,8 @@ class HarvestIO
 {
 public:
 
+	static const google::protobuf::uint32 undef = -1;
+	
 	HarvestIO();
 	
 	void loadBed(const char * file);
@@ -33,6 +35,16 @@ public:
 	
 private:
 	
+	struct Variant
+	{
+		google::protobuf::uint32 sequence;
+		google::protobuf::uint32 position;
+		int offset;
+		google::protobuf::string alleles;
+		google::protobuf::uint64 filters;
+		google::protobuf::uint32 quality;
+	};
+	
 	enum ParseState
 	{
 		STATE_start,
@@ -43,9 +55,31 @@ private:
 		STATE_end,
 	};
 	
-	void findVariants(const std::vector<std::string> & seqs, int position = 0);
+	int getPositionFromConcatenated(int sequence, long int position) const;
+	google::protobuf::uint32 getReferenceSequenceFromConcatenated(long int position) const;
+	google::protobuf::uint32 getReferenceSequenceFromGi(long int gi) const;
+	void findVariants(const std::vector<std::string> & seqs, std::vector<const Variant *> & vars, int sequence, int position = 0);
 	char * loadNewickNode(char * token, Harvest::Tree::Node * msg, bool useNames);
 	void writeNewickNode(std::ostream &out, const Harvest::Tree::Node & msg) const;
+	
+	static bool variantLessThan(const Variant * a, const Variant * b)
+	{
+		if ( a->sequence == b->sequence )
+		{
+			if ( a->position == b->position )
+			{
+				return a->offset < b->offset;
+			}
+			else
+			{
+				return a->position < b->position;
+			}
+		}
+		else
+		{
+			return a->sequence < b->sequence;
+		}
+	}
 	
 	std::map<std::string, google::protobuf::uint32> tracksByFile;
 };

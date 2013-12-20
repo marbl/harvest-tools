@@ -109,6 +109,7 @@ message Harvest
 			optional string locus = 4;
 			optional string name = 5;
 			optional string description = 6;
+			optional string feature = 7;
 		}
 	
 		repeated Annotation annotations = 1;

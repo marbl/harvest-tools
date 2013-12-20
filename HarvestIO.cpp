@@ -90,7 +90,7 @@ void HarvestIO::loadGenbank(const char * file)
 {
 	ifstream in(file);
 	char line[1 << 20];
-	Harvest::AnnotationList::Annotation * msgAnn;
+	Harvest::AnnotationList::Annotation * msgAnn = 0;
 	google::protobuf::uint32 sequence;
 	
 	while ( ! in.eof() )
@@ -127,48 +127,65 @@ void HarvestIO::loadGenbank(const char * file)
 		{
 			in.getline(line, (1 << 20) - 1);
 		
-			if ( in.eof() || strcmp(line, "//") == 0 )
+			if ( in.eof() || strcmp(line, "//") == 0 || removePrefix(line, "ORIGIN") )
 			{
 				break;
 			}
-		
+			
 			char * token = line;
 			char * suffix;
-		
+			
 			while ( *token == ' ' )
 			{
 				token++;
 			}
-		
-			if ( token == line + 5 && (suffix = removePrefix(token, "gene")) )
+			
+			if ( token == line + 5 )
 			{
-				token = suffix;
-			
-				while ( *token == ' ' )
-				{
-					token++;
-				}
-			
-				msgAnn = harvest.mutable_annotations()->add_annotations();
-				msgAnn->set_sequence(sequence);
+				int start;
+				int end;
+				bool reverse;
+				
+				string feature = strtok(token, " ");
+				
+				token = strtok(0, " ");
+				
 				suffix = removePrefix(token, "complement(");
-				msgAnn->set_reverse(suffix);
-			
+				reverse = suffix;
+				
 				if ( suffix )
 				{
 					token = suffix;
 				}
-			
+				
 				suffix = removePrefix(token, "join(");
-			
+				
 				if ( suffix )
 				{
 					token = suffix;
 				}
-			
-				msgAnn->add_regions();
-				msgAnn->mutable_regions(0)->set_start(atoi(strtok(token, ".")) - 1);
-				msgAnn->mutable_regions(0)->set_end(atoi(strtok(0, ".,)")) - 1);
+				
+				start = atoi(strtok(token, ".")) - 1;
+				end = atoi(strtok(0, ".,)")) - 1;
+				
+				if ( ! msgAnn || start != msgAnn->regions(0).start() || end != msgAnn->regions(0).end() || reverse != msgAnn->reverse() )
+				{
+					if ( feature != "source" )
+					{
+						msgAnn = harvest.mutable_annotations()->add_annotations();
+						msgAnn->set_sequence(sequence);
+					
+						msgAnn->add_regions();
+						msgAnn->mutable_regions(0)->set_start(start);
+						msgAnn->mutable_regions(0)->set_end(end);
+						msgAnn->set_reverse(reverse);
+					}
+				}
+				
+				if ( msgAnn )
+				{
+					msgAnn->set_feature(feature);
+				}
 			}
 			else
 			{
@@ -178,7 +195,7 @@ void HarvestIO::loadGenbank(const char * file)
 				{
 					msgAnn->set_locus(strtok(suffix, "\""));
 				}
-				else if ( (suffix = removePrefix(token, "/gene=\"")) )
+				else if ( (suffix = removePrefix(token, "/gene=\"")) && msgAnn->feature() == "gene" )
 				{
 					msgAnn->set_name(strtok(suffix, "\""));
 				}
@@ -311,6 +328,7 @@ void HarvestIO::loadMFA(const char * file)
 		variant->set_alleles(vars[i]->alleles);
 		variant->set_filters(vars[i]->filters);
 		
+		//printf("VARIANT:\t%d\t%d\t%llu\t%d\t%s\n", variant->sequence(), variant->position(), variant->filters(), variant->quality(), variant->alleles().c_str());
 		delete vars[i];
 	}
 }
@@ -584,7 +602,7 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 			variant->set_alleles(vars[i]->alleles);
 			variant->set_filters(vars[i]->filters);
 			
-			printf("VARIANT:\t%d\t%d\t%llu\t%d\t%s\n", variant->sequence(), variant->position(), variant->filters(), variant->quality(), variant->alleles().c_str());
+			//printf("VARIANT:\t%d\t%d\t%llu\t%d\t%s\n", variant->sequence(), variant->position(), variant->filters(), variant->quality(), variant->alleles().c_str());
 			delete vars[i];
 		}
 	}

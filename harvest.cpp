@@ -91,9 +91,6 @@ int main(int argc, const char * argv[])
 	if ( mfa )
 	{
 		hio.loadMFA(mfa);
-		hio.loadNewick(newick);
-		hio.writeHarvest(output);
-		return 0;
 	}
 	
 	if ( fasta )

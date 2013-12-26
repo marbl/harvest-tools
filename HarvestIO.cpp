@@ -22,7 +22,7 @@ void HarvestIO::loadBed(const char * file)
 	ifstream in(file);
 	char line[1 << 20];
 	int i = 0;
-	google::protobuf::uint64 flag = 2 << harvest.variation().filters_size();
+	google::protobuf::uint64 flag = 1 << harvest.variation().filters_size();
 	
 	Harvest::Variation::Filter * msgFilter = harvest.mutable_variation()->add_filters();
 	
@@ -39,21 +39,35 @@ void HarvestIO::loadBed(const char * file)
 			break;
 		}
 		
-		strtok(line, "\t"); // eat chromosome
-		
+		int seq = atoi(strtok(line, "\t")) - 1;
 		int start = atoi(strtok(0, "\t")) - 1;
 		int end = atoi(strtok(0, "\t")) - 1;
 		
 		// seek to interval start
 		//
-		while ( i < harvest.variation().variants_size() && harvest.variation().variants(i).position() < start )
+		while
+		(
+			i < harvest.variation().variants_size() &&
+			(
+				harvest.variation().variants(i).sequence() < seq ||
+				(
+					harvest.variation().variants(i).sequence() == seq &&
+					harvest.variation().variants(i).position() < start
+				)
+			)
+		)
 		{
 			i++;
 		}
 		
 		// set flags through interval
 		//
-		while ( i < harvest.variation().variants_size() && harvest.variation().variants(i).position() <= end )
+		while
+		(
+			i < harvest.variation().variants_size() &&
+			harvest.variation().variants(i).sequence() == seq &&
+			harvest.variation().variants(i).position() <= end
+		)
 		{
 			Harvest::Variation::Variant * msgVariant = harvest.mutable_variation()->mutable_variants(i);
 			msgVariant->set_filters(msgVariant->filters() | flag);
@@ -878,7 +892,14 @@ void HarvestIO::writeVcf(std::ostream &out, bool indels) const
         //indel char, to skip columns with indels (for now)
         char indl = '-';
         //the VCF output file
-
+	
+	for ( int i = 0; i < harvest.variation().filters_size(); i++ )
+	{
+		const Harvest::Variation::Filter & msgFilter = harvest.variation().filters(i);
+		
+		out << "##FILTER=<ID=" << msgFilter.name() << ",Description=\"" << msgFilter.description() << "\">\n";
+	}
+	
         //the reference sequence
 	string refseq;
         refseq = harvest.reference().references(0).sequence();
@@ -927,7 +948,7 @@ void HarvestIO::writeVcf(std::ostream &out, bool indels) const
             rend = refseq.size()-pos;
           if (pos+rend >= refseq.size())
             rend = 0;
-    	  out << msgSnp.sequence() + 1 << "\t" << pos << "\t" << refseq.substr(lend,ws) << "." << refseq.substr(pos,rend);
+    	  out << msgSnp.sequence() + 1 << "\t" << pos + 1 << "\t" << refseq.substr(lend,ws) << "." << refseq.substr(pos,rend);
           
 	  //build non-redundant allele list from cur alleles
           vector<char> allele_list;
@@ -958,8 +979,33 @@ void HarvestIO::writeVcf(std::ostream &out, bool indels) const
           //below values, punt for now, fill in with actual values later..
           //QUAL
           out << "\t40";
-          //FILT
-          out << "\tNA";
+          
+		//FILT
+		//
+		out << '\t';
+		int filterCount = 0;
+		//
+		for ( int i = 0; i < harvest.variation().filters_size(); i++ )
+		{
+			const Harvest::Variation::Filter & msgFilter = harvest.variation().filters(i);
+			
+			if ( msgSnp.filters() & msgFilter.flag() )
+			{
+				if ( filterCount > 0 )
+				{
+					out << ':';
+				}
+				
+				out << msgFilter.name();
+				filterCount++;
+			}
+		}
+		//
+		if ( filterCount == 0 )
+		{
+			out << "PASS";
+		}
+		
           //INFO
           out << "\tNA";
           //FORMAT

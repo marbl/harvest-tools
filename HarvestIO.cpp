@@ -492,11 +492,16 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 	
 	if ( variants )
 	{
-		Harvest::Variation::Filter * msgFilter = harvest.mutable_variation()->add_filters();
+		Harvest::Variation::Filter * msgFilterIndel = harvest.mutable_variation()->add_filters();
+		Harvest::Variation::Filter * msgFilterN = harvest.mutable_variation()->add_filters();
 	
-		msgFilter->set_flag(1);
-		msgFilter->set_name("IND");
-		msgFilter->set_description("Indel");
+		msgFilterIndel->set_flag(1);
+		msgFilterIndel->set_name("IND");
+		msgFilterIndel->set_description("Column contains indel");
+	
+		msgFilterN->set_flag(2);
+		msgFilterN->set_name("N");
+		msgFilterN->set_description("Column contains N");
 	}
 	
 	Harvest::Alignment * msgAlignment = harvest.mutable_alignment();
@@ -1097,6 +1102,7 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 	for ( int i = 0; i < seqs[0].length(); i++ )
 	{
 		bool variant = false;
+		bool n = false;
 		
 		col[0] = seqs[0][i];
 		
@@ -1126,6 +1132,11 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 			{
 				indel = true;
 			}
+			
+			if ( col[j] == 'N' )
+			{
+				n = true;
+			}
 		}
 		
 		if ( variant )
@@ -1142,7 +1153,18 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 			varNew->position = position;
 			varNew->offset = offset;
 			varNew->alleles = col;
-			varNew->filters = indel ? 1 : 0;
+			varNew->filters = 0;
+			
+			if ( indel )
+			{
+				varNew->filters |= 1;
+			}
+			
+			if ( n )
+			{
+				varNew->filters |= 2;
+			}
+			
 			varNew->quality = 0;
 			/*
 			Harvest::Variation::Variant * variant = msg->add_variants();

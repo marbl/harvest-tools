@@ -179,8 +179,28 @@ void HarvestIO::loadGenbank(const char * file)
 					token = suffix;
 				}
 				
+				suffix = removePrefix(token, "order(");
+				
+				if ( suffix )
+				{
+					token = suffix;
+				}
+				
+				suffix = removePrefix(token, "complement(");
+				
+				if ( suffix )
+				{
+					reverse = ! reverse;
+					token = suffix;
+				}
+				
+				if ( *token == '<' || *token == '>' )
+				{
+					token++;
+				}
+				
 				start = atoi(strtok(token, ".")) - 1;
-				end = atoi(strtok(0, ".,)")) - 1;
+				end = atoi(strtok(0, ".,)<>")) - 1;
 				
 				if ( ! msgAnn || start != msgAnn->regions(0).start() || end != msgAnn->regions(0).end() || reverse != msgAnn->reverse() )
 				{

@@ -56,6 +56,10 @@ int main(int argc, const char * argv[])
 				case 'v': vcf = argv[++i]; break;
 				case 'x': xmfa = argv[++i]; break;
 				case 'X': outXmfa = argv[++i]; break;
+				
+				default:
+					printf("ERROR: Unrecognized option ('%s').\n", argv[i]);
+					help = true;
 			}
 		}
 	}

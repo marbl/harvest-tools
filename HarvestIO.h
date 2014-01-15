@@ -58,7 +58,7 @@ private:
 	int getPositionFromConcatenated(int sequence, long int position) const;
 	google::protobuf::uint32 getReferenceSequenceFromConcatenated(long int position) const;
 	google::protobuf::uint32 getReferenceSequenceFromGi(long int gi) const;
-	void findVariants(const std::vector<std::string> & seqs, std::vector<const Variant *> & vars, int sequence, int position = 0);
+	void findVariants(const std::vector<std::string> & seqs, std::vector<const Variant *> & vars, int sequence, int position = 0, bool lcbfilt = false);
 	char * loadNewickNode(char * token, Harvest::Tree::Node * msg, bool useNames);
 	void writeNewickNode(std::ostream &out, const Harvest::Tree::Node & msg) const;
 	

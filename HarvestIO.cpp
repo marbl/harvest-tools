@@ -494,6 +494,7 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 	{
 		Harvest::Variation::Filter * msgFilterIndel = harvest.mutable_variation()->add_filters();
 		Harvest::Variation::Filter * msgFilterN = harvest.mutable_variation()->add_filters();
+		Harvest::Variation::Filter * msgFilterLCB = harvest.mutable_variation()->add_filters();
 	
 		msgFilterIndel->set_flag(1);
 		msgFilterIndel->set_name("IND");
@@ -502,6 +503,10 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 		msgFilterN->set_flag(2);
 		msgFilterN->set_name("N");
 		msgFilterN->set_description("Column contains N");
+
+		msgFilterLCB->set_flag(4);
+		msgFilterLCB->set_name("LCB");
+		msgFilterLCB->set_description("LCB smaller than 200bp");
 	}
 	
 	Harvest::Alignment * msgAlignment = harvest.mutable_alignment();
@@ -509,7 +514,8 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 	Harvest::Alignment::Lcb * msgLcb;
 	
 	google::protobuf::uint32 lcb_length = 0;
-	
+        //if lcb < 200bp filter SNPs inside
+	bool lcbfilt = false;
 	while ( ! in.eof() )
 	{
 		in.getline(line, (1 << 20) - 1);
@@ -580,7 +586,8 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 			
 			if ( all )
 			{
-				findVariants(seqs, vars, msgLcb->sequence(), msgLcb->position());
+                          
+			  findVariants(seqs, vars, msgLcb->sequence(), msgLcb->position(), lcb_length < 200 ? true : false);
 			}
 			
 			for ( int i = 0; i < seqs.size(); i++ )
@@ -1085,7 +1092,7 @@ google::protobuf::uint32 HarvestIO::getReferenceSequenceFromGi(long int gi) cons
 	return undef;
 }
 
-void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *> & vars, int sequence, int position)
+void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *> & vars, int sequence, int position, bool lcbfilt)
 {
 //	Harvest::Variation * msg = harvest.mutable_variation();
 	char col[seqs.size() + 1];
@@ -1103,7 +1110,7 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 	{
 		bool variant = false;
 		bool n = false;
-		
+
 		col[0] = seqs[0][i];
 		
 		bool indel = col[0] == '-';
@@ -1133,7 +1140,7 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 				indel = true;
 			}
 			
-			if ( col[j] == 'N' )
+			if ( col[j] == 'N' || col[j] == 'n' )
 			{
 				n = true;
 			}
@@ -1165,6 +1172,10 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 				varNew->filters |= 2;
 			}
 			
+                        if (lcbfilt)
+			{
+				varNew->filters |= 4;
+			}
 			varNew->quality = 0;
 			/*
 			Harvest::Variation::Variant * variant = msg->add_variants();

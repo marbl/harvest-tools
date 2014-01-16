@@ -214,6 +214,10 @@ void HarvestIO::loadGenbank(const char * file)
 						msgAnn->mutable_regions(0)->set_end(end);
 						msgAnn->set_reverse(reverse);
 					}
+					else
+					{
+						msgAnn = 0;
+					}
 				}
 				
 				if ( msgAnn )
@@ -221,7 +225,7 @@ void HarvestIO::loadGenbank(const char * file)
 					msgAnn->set_feature(feature);
 				}
 			}
-			else
+			else if ( msgAnn )
 			{
 				char * suffix;
 			

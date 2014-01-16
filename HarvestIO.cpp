@@ -204,7 +204,7 @@ void HarvestIO::loadGenbank(const char * file)
 				
 				if ( ! msgAnn || start != msgAnn->regions(0).start() || end != msgAnn->regions(0).end() || reverse != msgAnn->reverse() )
 				{
-					if ( feature != "source" )
+					if ( feature != "source" && feature != "misc_feature" )
 					{
 						msgAnn = harvest.mutable_annotations()->add_annotations();
 						msgAnn->set_sequence(sequence);

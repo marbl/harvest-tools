@@ -190,7 +190,7 @@ void HarvestIO::loadGenbank(const char * file)
 				
 				if ( suffix )
 				{
-					reverse = ! reverse;
+					reverse = true;
 					token = suffix;
 				}
 				
@@ -942,22 +942,19 @@ void HarvestIO::writeVcf(std::ostream &out, bool indels) const
 
         //the VCF header line (skipping previous lines for simplicity, can/will add in later)
         //#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  AA1 
-        out << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t";
+        out << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT";
 
 
-        int i = 0;
-        //output the file name for each column
-	for ( i = 0; i < harvest.tracks().tracks_size()-1; i++ )
+	//output the file name for each column
+	for ( int i = 0; i < harvest.tracks().tracks_size(); i++ )
 	{
-            const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
-	    out << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << '\t';
-    	    
+		const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
+		//out << '\t' << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file());
+		out << '\t' << msgTrack.file();
 	}
-        //grab the last one and add a new line to avoid extra tab at end of line
-        const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
-        out << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << '\n';
-        
-        
+	
+	out << '\n';
+	
         //now iterate over variants and output
 	for ( int j = 0; j < harvest.variation().variants_size(); j++ )
 	{

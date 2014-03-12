@@ -17,7 +17,7 @@ HarvestIO::HarvestIO()
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 }
 
-void HarvestIO::loadBed(const char * file)
+void HarvestIO::loadBed(const char * file, const char * name, const char * desc)
 {
 	ifstream in(file);
 	char line[1 << 20];
@@ -27,8 +27,8 @@ void HarvestIO::loadBed(const char * file)
 	Harvest::Variation::Filter * msgFilter = harvest.mutable_variation()->add_filters();
 	
 	msgFilter->set_flag(flag);
-	msgFilter->set_name("REC");
-	msgFilter->set_description("Recombination filter");
+	msgFilter->set_name(name);
+	msgFilter->set_description(desc);
 	
 	while ( ! in.eof() )
 	{

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include "HarvestIO.h"
+#include <string.h>
 
 using namespace::std;
 
@@ -68,7 +69,7 @@ int main(int argc, const char * argv[])
 	{
 		cout << "harVest usage: harvest " << endl;
 		cout << "   -i <harvest input>" << endl;
-		cout << "   -b <bed filter intervals>" << endl;
+		cout << "   -b <bed filter intervals>,<filter name>,\"<description>\"" << endl;
 		cout << "   -B <output backbone intervals>" << endl;
 		cout << "   -f <reference fasta>" << endl;
 		cout << "   -g <reference genbank>" << endl;
@@ -126,7 +127,16 @@ int main(int argc, const char * argv[])
 	
 	if ( bed )
 	{
-		hio.loadBed(bed);
+		char * arg = new char[strlen(bed) + 1];
+		
+		strcpy(arg, bed);
+		
+		const char * file = strtok(arg, ",");
+		const char * name = strtok(0, ",");
+		const char * desc = strtok(0, "");
+		
+		hio.loadBed(file, name, desc);
+		delete [] arg;
 	}
 	
 	if ( output )

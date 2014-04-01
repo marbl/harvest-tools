@@ -17,7 +17,7 @@ int main(int argc, const char * argv[])
 {
 	const char * input = 0;
 	const char * output = 0;
-	const char * bed = 0;
+	vector<const char *> bed;
 	const char * fasta = 0;
 	vector<const char *> genbank;
 	const char * mfa = 0;
@@ -41,7 +41,7 @@ int main(int argc, const char * argv[])
 		{
 			switch ( argv[i][1] )
 			{
-				case 'b': bed = argv[++i]; break;
+				case 'b': bed.push_back(argv[++i]); break;
 				case 'B': outBB = argv[++i]; break;
 				case 'f': fasta = argv[++i]; break;
 				case 'g': genbank.push_back(argv[++i]); break;
@@ -125,15 +125,27 @@ int main(int argc, const char * argv[])
 		hio.loadVcf(vcf);
 	}
 	
-	if ( bed )
+	for ( int i = 0; i < bed.size(); i++ )
 	{
-		char * arg = new char[strlen(bed) + 1];
+		char * arg = new char[strlen(bed[i]) + 1];
 		
-		strcpy(arg, bed);
+		strcpy(arg, bed[i]);
 		
 		const char * file = strtok(arg, ",");
 		const char * name = strtok(0, ",");
 		const char * desc = strtok(0, "");
+		
+		if ( name == 0 )
+		{
+			printf("ERROR: no filter name for bed file %s\n", file);
+			return 1;
+		}
+		
+		if ( desc == 0 )
+		{
+			printf("ERROR: no filter description for bed file %s\n", file);
+			return 1;
+		}
 		
 		hio.loadBed(file, name, desc);
 		delete [] arg;

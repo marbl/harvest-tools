@@ -6,7 +6,7 @@ Dependencies:
 
 Steps:
 ------
-   ./configure [--prefix=...] [--with-protobuf=...] [--with-zlib=...]
+   ./configure [--prefix=...] [--with-protobuf=...]
    make
    [sudo] make install
 
@@ -23,6 +23,7 @@ Products:
 Notes:
 ------
 When running ./configure, use --prefix to install somewhere other than
-/usr/local. Use --with-protobuf or --with-zlib with if these libraries are not
-in their default location (/usr/local). Sudo will be necessary for
-'make install' if write permission is not available in --prefix.
+/usr/local. Use --with-protobuf if the Protocol Buffer libraries are not
+in their default location (/usr/local). Zlib should be installed in a standard
+system location. Sudo will be necessary for 'make install' if write permission
+is not available in --prefix.

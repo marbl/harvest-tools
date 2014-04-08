@@ -3,7 +3,7 @@ flags=-Ipb -I@protobuf@/include
 UNAME_S=$(shell uname -s)
 
 ifeq ($(UNAME_S),Darwin)
-	flags += -mmacosx-version-min=10.7
+	flags += -mmacosx-version-min=10.7 -stdlib=libc++
 endif
 
 all : harvest libharvest.a
@@ -41,3 +41,5 @@ clean :
 	-rm libharvest.a
 	-rm *.o
 	-rm pb/*.o
+	-rm pb/*.cc
+	-rm pb/*.h

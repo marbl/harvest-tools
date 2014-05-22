@@ -263,11 +263,11 @@ void HarvestIO::loadGenbank(const char * file)
 		}
 	}
 	
-	for ( int i = 0; i < harvest.annotations().annotations_size(); i++ )
-	{
-		const Harvest::AnnotationList::Annotation msgAnn = harvest.annotations().annotations(i);
+	//for ( int i = 0; i < harvest.annotations().annotations_size(); i++ )
+	//{
+	//	const Harvest::AnnotationList::Annotation msgAnn = harvest.annotations().annotations(i);
 		//printf("%s\t%d\t%d\t%c\t%s\t%s\n", msgAnn.locus().c_str(), msgAnn.regions(0).start(), msgAnn.regions(0).end(), msgAnn.reverse() ? '-' : '+', msgAnn.name().c_str(), msgAnn.description().c_str());
-	}
+	//}
 	
 	in.close();
 }
@@ -519,6 +519,8 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 		Harvest::Variation::Filter * msgFilterIndel = harvest.mutable_variation()->add_filters();
 		Harvest::Variation::Filter * msgFilterN = harvest.mutable_variation()->add_filters();
 		Harvest::Variation::Filter * msgFilterLCB = harvest.mutable_variation()->add_filters();
+		Harvest::Variation::Filter * msgFilterCID = harvest.mutable_variation()->add_filters();
+		Harvest::Variation::Filter * msgFilterALN = harvest.mutable_variation()->add_filters();
 	
 		msgFilterIndel->set_flag(1);
 		msgFilterIndel->set_name("IND");
@@ -531,6 +533,15 @@ void HarvestIO::loadXmfa(const char * file, bool variants)
 		msgFilterLCB->set_flag(4);
 		msgFilterLCB->set_name("LCB");
 		msgFilterLCB->set_description("LCB smaller than 200bp");
+
+		msgFilterCID->set_flag(8);
+		msgFilterCID->set_name("CID");
+		msgFilterCID->set_description("SNP in aligned 100bp window with < 50% column % ID ");
+
+		msgFilterALN->set_flag(16);
+		msgFilterALN->set_name("ALN");
+		msgFilterALN->set_description("SNP in aligned 100b window with > 20 indels");
+
 	}
 	
 	Harvest::Alignment * msgAlignment = harvest.mutable_alignment();
@@ -1117,10 +1128,54 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 {
 //	Harvest::Variation * msg = harvest.mutable_variation();
 	char col[seqs.size() + 1];
+        //add arrays for tracking conserved,poorly aligned columns
+	vector<bool> conserved(seqs[0].length()+1,true);
+	vector<bool> gaps(seqs[0].length()+1,false);
+	vector<bool> nns(seqs[0].length()+1,false);
 	int offset = 0;
-	
+
 	col[seqs.size()] = 0;
-	
+        //simple loop to check for column conservation
+        //this could be done via SP-score all-v-all pairs
+        //but for now, simply use to flag SNPs that are within a window of 100bp
+        //with less than 50% column conservation (w.r.t ref, not consensus)
+	for ( int i = 0; i < seqs[0].length(); i++ )
+	{
+		col[0] = seqs[0][i];
+                bool variant = false;
+                bool indel = false;
+                vector<int> nt_cnt(5,0);
+                vector<int>::iterator maxval;
+		for (int j = 0; j < seqs.size(); j++)
+		{
+                    col[j] = seqs[j][i];
+
+  		    if (col[j] == 'a' || col[j] == 'A')
+		      nt_cnt[0] =1;
+  		    else if (col[j] == 't' || col[j] == 'T')
+		      nt_cnt[1] =1;
+  		    else if (col[j] == 'g' || col[j] == 'G')
+		      nt_cnt[2] =1;
+  		    else if (col[j] == 'c' || col[j] == 'C')
+		      nt_cnt[3] =1;
+  		    else if (col[j] == 'n' || col[j] == 'N')
+		      nns[i] = true;
+  		    else if (col[j] == '-')
+		    {
+		      gaps[i] = true;
+                      nt_cnt[4] = 1;
+		    }
+                }
+                maxval = std::max_element(nt_cnt.begin(),nt_cnt.end());
+                if ((nt_cnt[0] + nt_cnt[1] + nt_cnt[2] + nt_cnt[3] +nt_cnt[4]) > 1)
+                  conserved[i] = false;
+                /*multi-allelic
+                if ((nt_cnt[0] + nt_cnt[1] + nt_cnt[2] + nt_cnt[3] +nt_cnt[4]) > 2)
+		{
+		  conserved[i] = false;
+		}
+                */
+	}
 	// Since insertions to the reference take on the left-most reference
 	// position, this allows the alignment to start with an insertion
 	// (possibly at reference position -1).
@@ -1146,26 +1201,26 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 			position++;
 			offset = 0;
 		}
-		
-		for ( int j = 1; j < seqs.size(); j++ )
-		{
-			col[j] = seqs[j][i];
-			
-			if ( ! variant && col[j] != col[0] )
-			{
-				variant = true;
-			}
-			
-			if ( ! indel && col[j] == '-' )
-			{
-				indel = true;
-			}
-			
-			if ( col[j] == 'N' || col[j] == 'n' )
-			{
-				n = true;
-			}
-		}
+                for ( int j = 1; j < seqs.size(); j++ )
+		  {
+		    col[j] = seqs[j][i];
+
+		    if ( ! variant && col[j] != col[0] )
+		      {
+			variant = true;
+		      }
+
+		    if ( ! indel && col[j] == '-' )
+		      {
+			indel = true;
+		      }
+
+		    if ( col[j] == 'N' || col[j] == 'n' )
+		      {
+			n = true;
+		      }
+		  }
+
 		
 		if ( variant )
 		{
@@ -1182,7 +1237,46 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 			varNew->offset = offset;
 			varNew->alleles = col;
 			varNew->filters = 0;
-			
+			int windowsize = 0;
+                        int window = 50;
+                        if (window > i)
+			{
+			  window = i -1;
+			}
+                        windowsize+=window;
+                        int conserved_cnt = 0;
+                        int gap_cnt = 0;
+                        for (int z = 1; z<=window;z++)
+			{
+			  if (conserved.at(i-z))
+			  {
+			    conserved_cnt+=1;
+			  }
+
+			  if (gaps.at(i-z))
+			  {
+			    gap_cnt+=1;
+			  }
+            
+			}
+                        window = 50;
+                        if (window+i > seqs[0].length())
+			{
+			  window = seqs[0].length() - i;
+			}
+                        windowsize+=window;
+                        for (int z = 1; z<=window;z++)
+			{
+			  if (conserved.at(i+z))
+			  {
+			    conserved_cnt+=1;
+			  }
+			  if (gaps.at(i+z))
+			  {
+			    gap_cnt+=1;
+			  }
+			}
+
 			if ( indel )
 			{
 				varNew->filters |= 1;
@@ -1197,6 +1291,15 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 			{
 				varNew->filters |= 4;
 			}
+                        if ( ((float)conserved_cnt/(float)windowsize) < 0.5 )
+			{
+				varNew->filters |= 8;
+			}
+                        if ( ((float)gap_cnt/(float)windowsize) > 0.2 )
+			{
+				varNew->filters |= 16;
+			}
+
 			varNew->quality = 0;
 			/*
 			Harvest::Variation::Variant * variant = msg->add_variants();

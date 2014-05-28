@@ -73,6 +73,7 @@ int main(int argc, const char * argv[])
 		cout << "   -B <output backbone intervals>" << endl;
 		cout << "   -f <reference fasta>" << endl;
 		cout << "   -g <reference genbank>" << endl;
+		cout << "   -m <multi-fasta alignment input>" << endl;
 		cout << "   -n <Newick tree input>" << endl;
 		cout << "   -N <Newick tree output>" << endl;
 		cout << "   -o <hvt output>" << endl;
@@ -185,7 +186,7 @@ int main(int argc, const char * argv[])
 			fp = &fout;
 		}
 		
-		hio.writeSnp(*fp);
+		hio.writeSnp(*fp, true);
 	}
 
 	if ( outBB )
@@ -232,7 +233,7 @@ int main(int argc, const char * argv[])
 			fp = &fout;
 		}
 		
-		hio.writeVcf(*fp);
+		hio.writeVcf(*fp, true);
 
 	}
 	

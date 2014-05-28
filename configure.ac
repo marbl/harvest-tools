@@ -1,4 +1,4 @@
-AC_INIT(harvest)
+AC_INIT(harvest.cpp)
 
 AC_ARG_WITH(protobuf, [  --with-protobuf=<path/to/protobuf>     Protocol Buffers install dir (default: /usr/local/)])
 
@@ -9,7 +9,7 @@ fi
 
 AC_LANG(C++)
 
-AC_CHECK_PROG(protocCheck, protoc, "yes", "no" $with_protobuf/bin)
+AC_CHECK_PROG(protocCheck, protoc, "yes", "no", $with_protobuf/bin)
 
 if test "$protocCheck" != "yes"
 then

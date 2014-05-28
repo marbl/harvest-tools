@@ -1,5 +1,11 @@
 flags=-Ipb -I@protobuf@/include
 
+UNAME_S=$(shell uname -s)
+
+ifeq ($(UNAME_S),Darwin)
+	flags += -mmacosx-version-min=10.7 -stdlib=libc++
+endif
+
 all : harvest libharvest.a
 
 harvest : harvest.o libharvest.a
@@ -34,7 +40,13 @@ install : libharvest.a
 	mkdir -p @prefix@/include/Harvest
 	ln -sf `pwd`/harvest @prefix@/bin/
 	ln -sf `pwd`/libharvest.a @prefix@/lib/
-	ln -sf `pwd`/HarvestIO.h @prefix@/include/Harvest/
-	ln -sf `pwd`/Tree.h @prefix@/include/Harvest/
-	ln -sf `pwd`/TreeNode.h @prefix@/include/Harvest/
-	ln -sf `pwd`/pb/harvest.pb.h @prefix@/include/Harvest/
+	ln -sf `pwd`/HarvestIO.h @prefix@/include/
+	ln -sf `pwd`/pb/harvest.pb.h @prefix@/include/
+
+clean :
+	-rm harvest
+	-rm libharvest.a
+	-rm *.o
+	-rm pb/*.o
+	-rm pb/*.cc
+	-rm pb/*.h

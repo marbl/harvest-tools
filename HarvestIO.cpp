@@ -93,6 +93,13 @@ void HarvestIO::loadFasta(const char * file)
 		}
 		else if ( *line != '#' )
 		{
+			int length = strlen(line);
+			
+			if ( line[length - 1] == '\r' )
+			{
+				line[length - 1] = 0;
+			}
+			
 			msgSequence->mutable_sequence()->append(line);
 		}
 	}
@@ -1171,7 +1178,7 @@ void HarvestIO::findVariants(const vector<string> & seqs, vector<const Variant *
 		{
 			Variant * varNew = new Variant();
 			
-			while ( position >= harvest.reference().references(sequence).sequence().length() )
+			while ( position >= 0 && position >= harvest.reference().references(sequence).sequence().length() )
 			{
 				position -= harvest.reference().references(sequence).sequence().length();
 				sequence++;

@@ -1,4 +1,4 @@
-flags=-Ipb -I@protobuf@/include
+flags=-Isrc -I@protobuf@/include
 
 UNAME_S=$(shell uname -s)
 
@@ -6,47 +6,60 @@ ifeq ($(UNAME_S),Darwin)
 	flags += -mmacosx-version-min=10.7 -stdlib=libc++
 endif
 
+SOURCES=\
+	src/harvest/AnnotationList.cpp \
+	src/harvest/harvest.cpp \
+	src/harvest/HarvestIO.cpp \
+	src/harvest/LcbList.cpp \
+	src/harvest/parse.cpp \
+	src/harvest/PhylogenyTree.cpp \
+	src/harvest/PhylogenyTreeNode.cpp \
+	src/harvest/ReferenceList.cpp \
+	src/harvest/TrackList.cpp \
+	src/harvest/VariantList.cpp \
+	
+OBJECTS=$(SOURCES:.cpp=.o) src/harvest/pb/harvest.pb.o
+
 all : harvest libharvest.a
 
-harvest : harvest.o libharvest.a
-	gcc ${flags} -o harvest -lstdc++ -lz -lm harvest.o libharvest.a @protobuf@/lib/libprotobuf.a
+harvest : $(OBJECTS) libharvest.a
+	gcc ${flags} -o harvest -lstdc++ -lz -lm $(OBJECTS) libharvest.a @protobuf@/lib/libprotobuf.a
 
-libharvest.a : HarvestIO.o pb/harvest.pb.o Tree.o TreeNode.o
-	ar -cr libharvest.a HarvestIO.o pb/harvest.pb.o
+libharvest.a : $(OBJECTS)
+	ar -cr libharvest.a $(OBJECTS)
 	ranlib libharvest.a
 
-harvest.o : harvest.cpp HarvestIO.h pb/harvest.pb.h Tree.h TreeNode.h
-	gcc ${flags} -c harvest.cpp
+%.o : %.cpp src/harvest/pb/harvest.pb.h
+	gcc ${flags} -c $< -o $@
 
-HarvestIO.o : HarvestIO.cpp HarvestIO.h pb/harvest.pb.cc pb/harvest.pb.h Tree.h TreeNode.h
-	gcc ${flags} -c HarvestIO.cpp
+src/harvest/pb/harvest.pb.o : src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h
+	gcc ${flags} -c src/harvest/pb/harvest.pb.cc -o src/harvest/pb/harvest.pb.o
 
-Tree.o : Tree.cpp Tree.h
-	gcc ${flags} -c Tree.cpp
-
-TreeNode.o : TreeNode.cpp TreeNode.h
-	gcc ${flags} -c TreeNode.cpp
-
-pb/harvest.pb.o : pb/harvest.pb.cc
-	@cd pb; gcc ${flags} -c harvest.pb.cc
-
-pb/harvest.pb.cc pb/harvest.pb.h : pb/harvest.proto
-	@cd pb; @protobuf@/bin/protoc --cpp_out . harvest.proto
+src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h : src/harvest/pb/harvest.proto
+	cd src; @protobuf@/bin/protoc --cpp_out . harvest/pb/harvest.proto
 
 install : libharvest.a
 	mkdir -p @prefix@/bin/
 	mkdir -p @prefix@/lib/
 	mkdir -p @prefix@/include/
-	mkdir -p @prefix@/include/Harvest
+	mkdir -p @prefix@/include/harvest
+	mkdir -p @prefix@/include/harvest/pb
 	ln -sf `pwd`/harvest @prefix@/bin/
 	ln -sf `pwd`/libharvest.a @prefix@/lib/
-	ln -sf `pwd`/HarvestIO.h @prefix@/include/
-	ln -sf `pwd`/pb/harvest.pb.h @prefix@/include/
+	ln -sf `pwd`/src/harvest/HarvestIO.h @prefix@/include/harvest/
+	ln -sf `pwd`/src/harvest/pb/harvest.pb.h @prefix@/include/harvest/pb/
+	ln -sf `pwd`/src/harvest/ReferenceList.h @prefix@/include/harvest/
+	ln -sf `pwd`/src/harvest/AnnotationList.h @prefix@/include/harvest/
+	ln -sf `pwd`/src/harvest/PhylogenyTree.h @prefix@/include/harvest/
+	ln -sf `pwd`/src/harvest/PhylogenyTreeNode.h @prefix@/include/harvest/
+	ln -sf `pwd`/src/harvest/TrackList.h @prefix@/include/harvest/
+	ln -sf `pwd`/src/harvest/LcbList.h @prefix@/include/harvest/
+	ln -sf `pwd`/src/harvest/VariantList.h @prefix@/include/harvest/
 
 clean :
 	-rm harvest
 	-rm libharvest.a
-	-rm *.o
-	-rm pb/*.o
-	-rm pb/*.cc
-	-rm pb/*.h
+	-rm src/harvest/*.o
+	-rm src/harvest/pb/*.o
+	-rm src/harvest/pb/*.cc
+	-rm src/harvest/pb/*.h

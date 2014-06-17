@@ -1,4 +1,4 @@
-AC_INIT(harvest.cpp)
+AC_INIT(src/harvest/harvest.cpp)
 
 AC_ARG_WITH(protobuf, [  --with-protobuf=<path/to/protobuf>     Protocol Buffers install dir (default: /usr/local/)])
 

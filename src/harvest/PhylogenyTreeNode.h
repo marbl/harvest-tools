@@ -12,7 +12,7 @@ class PhylogenyTreeNode
 public:
 	
 	PhylogenyTreeNode(const Harvest::Tree::Node & msgNode, PhylogenyTreeNode * parent = 0);
-	PhylogenyTreeNode(char *& token, int & leaf, TrackList * trackList, bool useNames);
+	PhylogenyTreeNode(char *& token, TrackList * trackList, bool useNames, PhylogenyTreeNode * parent = 0);
 	PhylogenyTreeNode(PhylogenyTreeNode * parent, PhylogenyTreeNode * child); // for edge bisection
 	~PhylogenyTreeNode();
 	
@@ -28,7 +28,7 @@ public:
 	int getLeafCount() const;
 	int getLeafMax() const;
 	int getLeafMin() const;
-	void getLeaves(std::vector<const PhylogenyTreeNode *> & leaves) const;
+	void getLeaves(std::vector<PhylogenyTreeNode *> & leaves);
 	void getLeafIds(std::vector<int> & ids) const;
 	void getPairwiseDistances(float ** matrix, int size);
 	const PhylogenyTreeNode * getParent() const;
@@ -36,6 +36,7 @@ public:
 	void invert(PhylogenyTreeNode * fromChild = 0);
 	void setAlignDist(float dist, float dep);
 	void setParent(PhylogenyTreeNode * parentNew, float distanceNew);
+	void setTrackId(int trackIdNew);
 	void swapSiblings();
 	void writeToNewick(std::ostream &out, const TrackList & trackList) const;
 	void writeToProtocolBuffer(Harvest::Tree::Node * msgNode) const;
@@ -76,5 +77,6 @@ inline int PhylogenyTreeNode::getLeafCount() const {return leafMax - leafMin + 1
 inline int PhylogenyTreeNode::getLeafMax() const {return leafMax;}
 inline int PhylogenyTreeNode::getLeafMin() const {return leafMin;}
 inline const PhylogenyTreeNode * PhylogenyTreeNode::getParent() const {return parent;}
+inline void PhylogenyTreeNode::setTrackId(int trackIdNew) { trackId = trackIdNew; }
 
 #endif

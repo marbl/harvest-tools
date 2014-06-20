@@ -27,6 +27,8 @@ public:
 		float concordance;
 	};
 	
+	const Lcb & getLcb(int index) const;
+	int getLcbCount() const;
 	void initFromMfa(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList);
 	void initFromProtocolBuffer(const Harvest::Alignment & msgAlignment);
 	void initFromXmfa(const char * file, const ReferenceList & referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList);
@@ -37,3 +39,6 @@ private:
 	
 	std::vector<Lcb> lcbs;
 };
+
+inline const LcbList::Lcb & LcbList::getLcb(int index) const { return lcbs.at(index); }
+inline int LcbList::getLcbCount() const { return lcbs.size(); }

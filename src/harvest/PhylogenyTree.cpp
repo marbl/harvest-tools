@@ -11,13 +11,25 @@ PhylogenyTree::PhylogenyTree()
 
 PhylogenyTree::~PhylogenyTree()
 {
-	delete root;
+	if ( root )
+	{
+		delete root;
+	}
 }
 
 void PhylogenyTree::getLeafIds(vector<int> & ids) const
 {
 	ids.resize(0);
 	root->getLeafIds(ids);
+}
+
+void PhylogenyTree::init()
+{
+	int leaf = 0;
+	
+	root->initialize(nodeCount, leaf);
+	leaves.resize(0);
+	root->getLeaves(leaves);
 }
 
 void PhylogenyTree::initFromNewick(const char * file, TrackList * trackList)
@@ -32,16 +44,14 @@ void PhylogenyTree::initFromNewick(const char * file, TrackList * trackList)
 	
 	bool useNames = trackList->getTrackCount() == 0;
 	
-	int leaf = 0;
-	
 	while ( in.getline(line, (1 << 20) - 1) )
 	{
 		char * token = line;
-		root = new PhylogenyTreeNode(token, leaf, trackList, useNames);
-//		harvest.mutable_tree()->set_newick(line);
+		root = new PhylogenyTreeNode(token, trackList, useNames);
 	}
 	
 	in.close();
+	init();
 }
 
 void PhylogenyTree::initFromProtocolBuffer(const Harvest::Tree & msg)
@@ -54,10 +64,7 @@ void PhylogenyTree::initFromProtocolBuffer(const Harvest::Tree & msg)
 	nodeCount = 0;
 	int leaf = 0;
 	root = new PhylogenyTreeNode(msg.root());
-	leaves.resize(0);
-	root->initialize(nodeCount, leaf);
-	root->getLeaves(leaves);
-	//root->setAlignDist(root->getDistanceMax(), 0);
+	init();
 }
 
 float PhylogenyTree::leafDistance(int leaf1, int leaf2) const
@@ -151,12 +158,23 @@ void PhylogenyTree::midpointReroot()
 		node = node->getParent();
 	}
 	
-	reroot(node, midDistance - depth);
+	if ( node != root )
+	{
+		reroot(node, midDistance - depth);
+	}
 }
 
 void PhylogenyTree::setOutgroup(const PhylogenyTreeNode * node)
 {
 	reroot(node, node->getParent() == root ? (root->getChild(0)->getDistance() + root->getChild(1)->getDistance()) / 2 : node->getDistance() / 2, true);
+}
+
+void PhylogenyTree::setTrackIndeces(int * trackIndecesNew)
+{
+	for ( int i = 0; i < leaves.size(); i++ )
+	{
+		leaves[i]->setTrackId(trackIndecesNew[leaves[i]->getTrackId()]);
+	}
 }
 
 void PhylogenyTree::reroot(const PhylogenyTreeNode * rootNew, float distance, bool reorder)

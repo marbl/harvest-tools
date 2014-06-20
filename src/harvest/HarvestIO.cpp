@@ -103,19 +103,41 @@ bool HarvestIO::loadHarvest(const char * file)
 		return false;
 	}
 	
-	referenceList.initFromProtocolBuffer(harvest.reference());
-	annotationList.initFromProtocolBuffer(harvest.annotations(), referenceList);
+	if ( harvest.has_reference() )
+	{
+		referenceList.initFromProtocolBuffer(harvest.reference());
+	}
+	
+	if ( harvest.has_annotations() )
+	{
+		annotationList.initFromProtocolBuffer(harvest.annotations(), referenceList);
+	}
+	
 	trackList.initFromProtocolBuffer(harvest.tracks());
-	phylogenyTree.initFromProtocolBuffer(harvest.tree());
-	lcbList.initFromProtocolBuffer(harvest.alignment());
-	variantList.initFromProtocolBuffer(harvest.variation());
+	
+	if ( harvest.has_tree() )
+	{
+		phylogenyTree.initFromProtocolBuffer(harvest.tree());
+	}
+	
+	if ( harvest.has_alignment() )
+	{
+		lcbList.initFromProtocolBuffer(harvest.alignment());
+	}
+	
+	if ( harvest.has_variation() )
+	{
+		variantList.initFromProtocolBuffer(harvest.variation());
+	}
+	
+	harvest.Clear();
 	
 	close(fd);
 	google::protobuf::ShutdownProtobufLibrary();
 	return true;
 }
 
-void HarvestIO::loadMFA(const char * file, bool findVariants, int * trackIndecesNew)
+void HarvestIO::loadMFA(const char * file, bool findVariants)
 {
 	lcbList.initFromMfa(file, &referenceList, &trackList, &phylogenyTree, findVariants ? &variantList : 0);
 }
@@ -261,19 +283,44 @@ void HarvestIO::loadVcf(const char * file)
 	in.close();
 }
 
-void HarvestIO::loadXmfa(const char * file, bool findVariants, int * trackIndecesNew)
+void HarvestIO::loadXmfa(const char * file, bool findVariants)
 {
 	lcbList.initFromXmfa(file, referenceList, &trackList, &phylogenyTree, findVariants ? &variantList : 0);
 }
 
+void HarvestIO::writeFasta(std::ostream &out) const
+{
+	referenceList.writeToFasta(out);
+}
+
 void HarvestIO::writeHarvest(const char * file)
 {
-	referenceList.writeToProtocolBuffer(&harvest);
-	annotationList.writeToProtocolBuffer(&harvest, referenceList);
+	if ( referenceList.getReferenceCount() )
+	{
+		referenceList.writeToProtocolBuffer(&harvest);
+	}
+	
+	if ( annotationList.getAnnotationCount() )
+	{
+		annotationList.writeToProtocolBuffer(&harvest, referenceList);
+	}
+	
 	trackList.writeToProtocolBuffer(&harvest);
-	phylogenyTree.writeToProtocolBuffer(&harvest);
-	lcbList.writeToProtocolBuffer(&harvest);
-	variantList.writeToProtocolBuffer(&harvest);
+	
+	if ( phylogenyTree.getRoot() )
+	{
+		phylogenyTree.writeToProtocolBuffer(&harvest);
+	}
+	
+	if ( lcbList.getLcbCount() )
+	{
+		lcbList.writeToProtocolBuffer(&harvest);
+	}
+	
+	if ( variantList.getVariantCount() || variantList.getFilterCount() )
+	{
+		variantList.writeToProtocolBuffer(&harvest);
+	}
 	
 	int fd = open(file, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 	FileOutputStream stream(fd);
@@ -287,6 +334,9 @@ void HarvestIO::writeHarvest(const char * file)
 	zip_stream.Close();
 	stream.Close();
 	close(fd);
+	
+	harvest.Clear();
+	google::protobuf::ShutdownProtobufLibrary();
 }
 
 void HarvestIO::writeNewick(std::ostream &out) const

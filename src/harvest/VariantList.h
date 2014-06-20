@@ -28,6 +28,8 @@ public:
 	};
 	
 	void addVariantsFromAlignment(const std::vector<std::string> & seqs, const ReferenceList & referenceList, int sequence, int position, bool lcbfilt);
+	const Filter & getFilter(int index) const;
+	int getFilterCount() const;
 	const Variant & getVariant(int index) const;
 	int getVariantCount() const;
 	void init();
@@ -69,6 +71,8 @@ private:
 	std::vector<Variant> variants;
 };
 
+inline const VariantList::Filter & VariantList::getFilter(int index) const { return filters.at(index); }
+inline int VariantList::getFilterCount() const { return filters.size(); }
 inline const VariantList::Variant & VariantList::getVariant(int index) const { return variants.at(index); }
 inline int VariantList::getVariantCount() const { return variants.size(); }
 

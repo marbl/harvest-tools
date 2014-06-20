@@ -27,7 +27,12 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 	vector<string> seqs;
 	bool oldTags = trackList->getTrackCount();
 	string refTag;
-	int * trackIndecesNew; // TODO
+	int * trackIndecesNew;
+	
+	if ( oldTags )
+	{
+		trackIndecesNew = new int[trackList->getTrackCount()];
+	}
 	
 	while ( ! in.eof() )
 	{
@@ -47,7 +52,7 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 				refTag = line + 1;
 			}
 			
-			Track * track;
+			TrackList::Track * track;
 			
 			if ( oldTags )
 			{
@@ -72,10 +77,14 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 	if ( oldTags )
 	{
 		trackList->setTracksByFile();
+		phylogenyTree->setTrackIndeces(trackIndecesNew);
+		delete [] trackIndecesNew;
 	}
 	
 	string ref = seqs[0];
 	ungap(ref);
+	
+	referenceList->clear();
 	referenceList->addReference(refTag, ref);
 	
 	lcbs.resize(1);
@@ -96,6 +105,7 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 	
 	if ( variantList )
 	{
+		variantList->init();
 		variantList->addVariantsFromAlignment(seqs, *referenceList, lcb->sequence, lcb->position, false);
 		variantList->sortVariants();
 	}
@@ -139,11 +149,16 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 	int trackIndex = 0;
 	vector<string> seqs;
 	bool oldTags = trackList->getTrackCount();
-	int * trackIndecesNew; // TODO
+	int * trackIndecesNew;
 	
 	if ( variantList )
 	{
 		variantList->init();
+	}
+	
+	if ( oldTags )
+	{
+		trackIndecesNew = new int[trackList->getTrackCount()];
 	}
 	
 	LcbList::Lcb * lcb;
@@ -151,7 +166,7 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 	int lcbLength = 0;
 	
 	bool lcbfilt = false; // if lcb < 200bp filter SNPs inside
-	Track * track;
+	TrackList::Track * track;
 	
 	while ( ! in.eof() )
 	{
@@ -272,6 +287,8 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 	if ( oldTags )
 	{
 		trackList->setTracksByFile();
+		phylogenyTree->setTrackIndeces(trackIndecesNew);
+		delete [] trackIndecesNew;
 	}
 	
 	sort(lcbs.begin(), lcbs.end(), lcbLessThan);
@@ -328,7 +345,7 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 	
 	for ( int i = 0; i < trackList.getTrackCount(); i++ )
 	{
-		const Track & track = trackList.getTrack(i);
+		const TrackList::Track & track = trackList.getTrack(i);
 		out << "##SequenceIndex " << i + 1 << endl;
 		out << "##SequenceFile " << track.file << endl;
 		out << "##SequenceHeader " << track.name << endl;

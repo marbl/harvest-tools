@@ -23,11 +23,12 @@ public:
 	void loadFasta(const char * file);
 	void loadGenbank(const char * file);
 	bool loadHarvest(const char * file);
-	void loadMFA(const char * file, bool findVariants, int * trackIndecesNew);
+	void loadMFA(const char * file, bool findVariants);
 	void loadNewick(const char * file);
 	void loadVcf(const char * file);
-	void loadXmfa(const char * file, bool findVariants, int * trackIndecesNew);
+	void loadXmfa(const char * file, bool findVariants);
 	
+	void writeFasta(std::ostream &out) const;
 	void writeHarvest(const char * file);
 	void writeNewick(std::ostream &out) const;
 	void writeSnp(std::ostream &out, bool indels = false) const;
@@ -35,7 +36,6 @@ public:
 	void writeXmfa(std::ostream &out, bool split = false) const;
 	void writeBackbone(std::ostream &out) const;
 	
-	Harvest harvest;
 	ReferenceList referenceList;
 	AnnotationList annotationList;
 	PhylogenyTree phylogenyTree;
@@ -46,6 +46,8 @@ public:
 private:
 	
 	void writeNewickNode(std::ostream &out, const Harvest::Tree::Node & msg) const;
+	
+	Harvest harvest;
 };
 
 #endif

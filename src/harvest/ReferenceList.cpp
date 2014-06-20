@@ -103,6 +103,31 @@ void ReferenceList::initFromProtocolBuffer(const Harvest::Reference & msg)
 	}
 }
 
+void ReferenceList::writeToFasta(ostream & out) const
+{
+	for ( int i = 0; i < references.size(); i++ )
+	{
+		out << '>' << references[i].name << endl;
+		
+		const string & sequence = references[i].sequence;
+		int width = 0;
+		
+		for ( int j = 0; j < sequence.length(); j++ )
+		{
+			if ( width == 80 )
+			{
+				out << endl;
+				width = 0;
+			}
+			
+			out << sequence.at(j);
+			width++;
+		}
+		
+		out << endl;
+	}
+}
+
 void ReferenceList::writeToProtocolBuffer(Harvest * msg) const
 {
 	for ( int i = 0; i < references.size(); i++ )

@@ -47,6 +47,8 @@ void TrackList::initFromProtocolBuffer(const Harvest::TrackList & msg)
 			tracks[i].size = msg.tracks(i).size();
 		}
 	}
+	
+	setTracksByFile();
 }
 
 void TrackList::setTracksByFile()

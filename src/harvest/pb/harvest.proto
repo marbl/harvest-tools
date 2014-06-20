@@ -44,7 +44,6 @@ message Harvest
 		}
 		
 		optional Node root = 1;
-		optional string newick = 2;
 	}
 	
 	message Alignment

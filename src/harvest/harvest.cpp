@@ -24,6 +24,7 @@ int main(int argc, const char * argv[])
 	const char * newick = 0;
 	const char * vcf = 0;
 	const char * xmfa = 0;
+	const char * outFasta = 0;
 	const char * outNewick = 0;
 	const char * outSnp = 0;
 	const char * outVcf = 0;
@@ -31,6 +32,7 @@ int main(int argc, const char * argv[])
 	const char * outXmfa = 0;
 	bool help = false;
 	bool quiet = false;
+	bool midpointReroot = false;
 	
 	//stdout flag
 	string out1("-");
@@ -41,9 +43,16 @@ int main(int argc, const char * argv[])
 		{
 			switch ( argv[i][1] )
 			{
+				case '-':
+					if ( strcmp(argv[i], "--midpoint-reroot") == 0 )
+					{
+						midpointReroot = true;
+					}
+					break;
 				case 'b': bed.push_back(argv[++i]); break;
 				case 'B': outBB = argv[++i]; break;
 				case 'f': fasta = argv[++i]; break;
+				case 'F': outFasta = argv[++i]; break;
 				case 'g': genbank.push_back(argv[++i]); break;
 				case 'h': help = true; break;
 				case 'i': input = argv[++i]; break;
@@ -72,10 +81,12 @@ int main(int argc, const char * argv[])
 		cout << "   -b <bed filter intervals>,<filter name>,\"<description>\"" << endl;
 		cout << "   -B <output backbone intervals>" << endl;
 		cout << "   -f <reference fasta>" << endl;
+		cout << "   -F <reference fasta out>" << endl;
 		cout << "   -g <reference genbank>" << endl;
 		cout << "   -m <multi-fasta alignment input>" << endl;
 		cout << "   -n <Newick tree input>" << endl;
 		cout << "   -N <Newick tree output>" << endl;
+		cout << "   --midpoint-reroot" << endl;
 		cout << "   -o <hvt output>" << endl;
 		cout << "   -S <output for multi-fasta SNPs>" << endl;
 		cout << "   -v <VCF input>" << endl;
@@ -96,7 +107,7 @@ int main(int argc, const char * argv[])
 	
 	if ( mfa )
 	{
-		hio.loadMFA(mfa, vcf == 0, 0);
+		hio.loadMFA(mfa, vcf == 0);
 	}
 	
 	if ( fasta )
@@ -113,7 +124,7 @@ int main(int argc, const char * argv[])
 	{
 		if (!quiet)
 			printf("Loading %s...\n", xmfa);
-		hio.loadXmfa(xmfa, vcf == 0, 0);
+		hio.loadXmfa(xmfa, vcf == 0);
 	}
 	
 	if ( newick )
@@ -152,14 +163,35 @@ int main(int argc, const char * argv[])
 		delete [] arg;
 	}
 	
+	if ( midpointReroot )
+	{
+		hio.phylogenyTree.midpointReroot();
+	}
+	
 	if ( output )
 	{
 		hio.writeHarvest(output);
 	}
 	
+	if ( outFasta )
+	{
+		if (!quiet) cerr << "Writing " << outFasta << "...\n";
+		
+		std::ostream* fp = &cout;
+		std::ofstream fout;
+		
+		if (out1.compare(outFasta) != 0) 
+		{
+			fout.open(outFasta);
+			fp = &fout;
+		}
+		
+		hio.writeFasta(*fp);
+	}
+	
 	if ( outNewick )
 	{
-		if (!quiet) printf("Writing %s...\n", outNewick);
+		if (!quiet) cerr << "Writing " << outNewick << "...\n";
 		
 		std::ostream* fp = &cout;
 		std::ofstream fout;
@@ -175,7 +207,7 @@ int main(int argc, const char * argv[])
 	
 	if ( outSnp )
 	{
-		if (!quiet) printf("Writing %s...\n", outSnp);
+		if (!quiet) cerr << "Writing " << outSnp << "...\n";
 		
 		std::ostream* fp = &cout;
 		std::ofstream fout;
@@ -191,7 +223,7 @@ int main(int argc, const char * argv[])
 
 	if ( outBB )
 	{
-		if (!quiet) printf("Writing %s...\n", outBB);
+		if (!quiet) cerr << "Writing " << outBB << "...\n";
 		
 		std::ostream* fp = &cout;
 		std::ofstream fout;
@@ -207,7 +239,7 @@ int main(int argc, const char * argv[])
 	
 	if ( outXmfa )
 	{
-		if (!quiet) printf("Writing %s...\n", outXmfa);
+		if (!quiet) cerr << "Writing " << outXmfa << "...\n";
 		
 		std::ostream* fp = &cout;
 		std::ofstream fout;
@@ -218,13 +250,12 @@ int main(int argc, const char * argv[])
 			fp = &fout;
 		}
 		
-		hio.referenceList.initFromProtocolBuffer(hio.harvest.reference());
 		hio.writeXmfa(*fp);
 	}
 
 	if ( outVcf )
 	{
-		if (!quiet) printf("Writing %s...\n", outVcf);
+		if (!quiet) cerr << "Writing " << outVcf << "...\n";
 		
 		std::ostream* fp = &cout;
 		std::ofstream fout;

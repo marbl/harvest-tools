@@ -17,23 +17,23 @@ enum TrackType
 	READS = 4,
 };
 
-struct Track
-{
-	Track()
-	{
-		size = 0;
-		type = NONE;
-	}
-	
-	std::string file;
-	std::string name;
-	int size;
-	TrackType type;
-};
-
 class TrackList
 {
 public:
+
+	struct Track
+	{
+		Track()
+		{
+			size = 0;
+			type = NONE;
+		}
+	
+		std::string file;
+		std::string name;
+		int size;
+		TrackType type;
+	};
 	
 	int addTrack(const char * file, int size = 0, const char * name = "", TrackType type = NONE);
 	const Track & getTrack(int index) const;
@@ -50,7 +50,7 @@ private:
 	std::map<std::string, int> tracksByFile;
 };
 
-inline const Track & TrackList::getTrack(int index) const { return tracks[index]; }
-inline Track & TrackList::getTrackMutable(int index) { return tracks[index]; }
+inline const TrackList::Track & TrackList::getTrack(int index) const { return tracks[index]; }
+inline TrackList::Track & TrackList::getTrackMutable(int index) { return tracks[index]; }
 inline int TrackList::getTrackCount() const { return tracks.size(); }
 #endif

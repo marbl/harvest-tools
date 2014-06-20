@@ -24,11 +24,12 @@ PhylogenyTreeNode::PhylogenyTreeNode(const Harvest::Tree::Node & msgNode, Phylog
 //	collapse = false;
 }
 
-PhylogenyTreeNode::PhylogenyTreeNode(char *& token, int & leaf, TrackList * trackList, bool useNames)
+PhylogenyTreeNode::PhylogenyTreeNode(char *& token, TrackList * trackList, bool useNames, PhylogenyTreeNode * parent)
 {
 	ParseState state = STATE_start;
 	char * valueStart;
 	
+	this->parent = parent;
 	bootstrap = 0;
 	distance = 0;
 	
@@ -62,7 +63,7 @@ PhylogenyTreeNode::PhylogenyTreeNode(char *& token, int & leaf, TrackList * trac
 			}
 			else
 			{
-				children.push_back(new PhylogenyTreeNode(token, leaf, trackList, useNames));
+				children.push_back(new PhylogenyTreeNode(token, trackList, useNames, this));
 			}
 		}
 		else if ( state == STATE_nameLeaf || state == STATE_nameInternal )
@@ -89,7 +90,6 @@ PhylogenyTreeNode::PhylogenyTreeNode(char *& token, int & leaf, TrackList * trac
 						*(token - 1) = 0;
 					}
 					
-					//printf("leaf: %s\n", valueStart);
 					if ( state == STATE_nameInternal )
 					{
 						bootstrap = atof(valueStart);
@@ -106,10 +106,6 @@ PhylogenyTreeNode::PhylogenyTreeNode(char *& token, int & leaf, TrackList * trac
 						{
 							trackId = trackList->getTrackIndexByFile(valueStart);
 						}
-						
-						//harvest.mutable_tracks()->mutable_tracks(track)->set_leaf(leaf);
-						leaf++;
-						//msgTree->add_track_by_leaf(track);
 					}
 				}
 				
@@ -194,7 +190,7 @@ void PhylogenyTreeNode::getLeafIds(vector<int> & ids) const
 	}
 }
 
-void PhylogenyTreeNode::getLeaves(vector<const PhylogenyTreeNode *> & leaves) const
+void PhylogenyTreeNode::getLeaves(vector<PhylogenyTreeNode *> & leaves)
 {
 	if ( children.size() == 0 )
 	{

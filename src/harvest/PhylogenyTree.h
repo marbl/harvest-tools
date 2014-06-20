@@ -23,6 +23,7 @@ public:
 	float leafDistance(int leaf1, int leaf2) const;
 	void midpointReroot();
 	void setOutgroup(const PhylogenyTreeNode * node);
+	void setTrackIndeces(int * trackIndecesNew);
 	void writeToNewick(std::ostream &out, const TrackList & trackList) const;
 	void writeToProtocolBuffer(Harvest * msg) const;
 	
@@ -30,9 +31,10 @@ public:
 	
 private:
 	
+	void init();
 	void reroot(const PhylogenyTreeNode * rootNew, float distance, bool reorder = false);
 	
-	std::vector<const PhylogenyTreeNode *> leaves;
+	std::vector<PhylogenyTreeNode *> leaves;
 	PhylogenyTreeNode * root;
 	int nodeCount;
 };

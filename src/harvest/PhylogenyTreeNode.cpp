@@ -98,8 +98,6 @@ PhylogenyTreeNode::PhylogenyTreeNode(char *& token, TrackList * trackList, bool 
 					{
 						if ( useNames )
 						{
-							// TODO
-							
 							trackId = trackList->addTrack(valueStart);
 						}
 						else

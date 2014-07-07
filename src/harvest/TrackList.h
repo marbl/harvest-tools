@@ -47,6 +47,7 @@ public:
 private:
 	
 	std::vector<Track> tracks;
+	int trackReference;
 	std::map<std::string, int> tracksByFile;
 };
 

@@ -4,6 +4,8 @@
 #include <fstream>
 #include "harvest/parse.h"
 
+#include "harvest/VariantList.h"
+
 using namespace::std;
 
 bool lcbLessThan(const LcbList::Lcb a, const LcbList::Lcb & b)
@@ -87,26 +89,12 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 	referenceList->clear();
 	referenceList->addReference(refTag, ref);
 	
-	lcbs.resize(1);
-	LcbList::Lcb * lcb = &lcbs[0];
-	lcb->position = 0;
-	
-	for ( int i = 0; i < trackList->getTrackCount(); i++ )
-	{
-		lcb->regions.resize(lcb->regions.size() + 1);
-		LcbList::Region * region = &lcb->regions[lcb->regions.size() - 1];
-		
-		region->position = 0;
-		region->length = ref.length();
-		region->reverse = false;
-	}
-	
-	vector<const VariantList::Variant *> vars;
+	initWithSingleLcb(*referenceList, *trackList);
 	
 	if ( variantList )
 	{
 		variantList->init();
-		variantList->addVariantsFromAlignment(seqs, *referenceList, lcb->sequence, lcb->position, false);
+		variantList->addVariantsFromAlignment(seqs, *referenceList, 0, 0, false);
 		variantList->sortVariants();
 	}
 }
@@ -299,6 +287,30 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 	}
 	
 	in.close();
+}
+
+void LcbList::initWithSingleLcb(const ReferenceList & referenceList, const TrackList & trackList)
+{
+	int totalLength = 0;
+	
+	for ( int i = 0; i < referenceList.getReferenceCount(); i++ )
+	{
+		totalLength += referenceList.getReference(i).sequence.length();
+	}
+	
+	lcbs.resize(1);
+	LcbList::Lcb * lcb = &lcbs[0];
+	lcb->position = 0;
+	
+	for ( int i = 0; i < trackList.getTrackCount(); i++ )
+	{
+		lcb->regions.resize(lcb->regions.size() + 1);
+		LcbList::Region * region = &lcb->regions[lcb->regions.size() - 1];
+		
+		region->position = 0;
+		region->length = totalLength;
+		region->reverse = false;
+	}
 }
 
 void LcbList::writeToProtocolBuffer(Harvest * msg) const

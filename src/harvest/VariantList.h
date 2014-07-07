@@ -4,7 +4,12 @@
 
 #include <vector>
 #include "harvest/pb/harvest.pb.h"
+#include "harvest/LcbList.h"
+#include "harvest/PhylogenyTree.h"
 #include "harvest/ReferenceList.h"
+#include "harvest/TrackList.h"
+
+typedef long long unsigned int uint64;
 
 class VariantList
 {
@@ -12,7 +17,7 @@ public:
 	
 	struct Filter
 	{
-		long long int flag;
+		uint64 flag;
 		std::string name;
 		std::string description;
 	};
@@ -27,6 +32,7 @@ public:
 		int quality;
 	};
 	
+	void addFilterFromBed(const char * file, const char * name, const char * desc);
 	void addVariantsFromAlignment(const std::vector<std::string> & seqs, const ReferenceList & referenceList, int sequence, int position, bool lcbfilt);
 	const Filter & getFilter(int index) const;
 	int getFilterCount() const;
@@ -34,8 +40,10 @@ public:
 	int getVariantCount() const;
 	void init();
 	void initFromProtocolBuffer(const Harvest::Variation & msgVariation);
+	void initFromVcf(const char * file, const ReferenceList & referenceList, TrackList * trackList, LcbList * lcbList, PhylogenyTree * phylogenyTree);
 	void sortVariants();
 	void writeToProtocolBuffer(Harvest * harvest) const;
+	void writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const TrackList & trackList) const;
 	
 	static bool variantLessThan(const Variant & a, const Variant & b)
 	{

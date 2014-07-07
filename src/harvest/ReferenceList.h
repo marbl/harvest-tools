@@ -12,6 +12,7 @@ static const int undef = -1;
 struct Reference
 {
 	std::string name;
+	std::string description;
 	std::string sequence;
 };
 
@@ -35,6 +36,9 @@ private:
 	
 	std::vector<Reference> references;
 };
+
+std::string parseNameFromTag(std::string tag);
+std::string parseDescriptionFromTag(std::string tag);
 
 inline void ReferenceList::clear() { references.resize(0); }
 inline int ReferenceList::getReferenceCount() const { return references.size(); }

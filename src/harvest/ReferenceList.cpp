@@ -73,7 +73,10 @@ void ReferenceList::initFromFasta(const char * file)
 			references.resize(references.size() + 1);
 			reference = &references.at(references.size() - 1);
 			
-			reference->name = line + 1;
+			string tag = line + 1;
+			
+			reference->name = parseNameFromTag(tag);
+			reference->description = parseDescriptionFromTag(tag);
 		}
 		else if ( *line != '#' )
 		{
@@ -98,7 +101,8 @@ void ReferenceList::initFromProtocolBuffer(const Harvest::Reference & msg)
 	
 	for ( int i = 0; i < msg.references_size(); i++ )
 	{
-		references[i].name = msg.references(i).tag();
+		references[i].name = parseNameFromTag(msg.references(i).tag());
+		references[i].description = parseDescriptionFromTag(msg.references(i).tag());
 		references[i].sequence = msg.references(i).sequence();
 	}
 }
@@ -107,7 +111,14 @@ void ReferenceList::writeToFasta(ostream & out) const
 {
 	for ( int i = 0; i < references.size(); i++ )
 	{
-		out << '>' << references[i].name << endl;
+		out << '>' << references[i].name;
+		
+		if ( references[i].description.length() )
+		{
+			out << ' ' << references[i].description;
+		}
+		
+		out << endl;
 		
 		const string & sequence = references[i].sequence;
 		int width = 0;
@@ -133,8 +144,44 @@ void ReferenceList::writeToProtocolBuffer(Harvest * msg) const
 	for ( int i = 0; i < references.size(); i++ )
 	{
 		Harvest::Reference::Sequence * msgRef = msg->mutable_reference()->add_references();
+		const Reference & reference = references.at(i);
 		
-		msgRef->set_tag(references.at(i).name);
-		msgRef->set_sequence(references.at(i).sequence);
+		msgRef->mutable_tag()->append(reference.name);
+		
+		if ( reference.description.length() )
+		{
+			msgRef->mutable_tag()->append(" ");
+			msgRef->mutable_tag()->append(reference.description);
+		}
+		
+		msgRef->set_sequence(reference.sequence);
 	}
+}
+
+string parseNameFromTag(string tag)
+{
+	for ( int i = 0; i < tag.length(); i++ )
+	{
+		if ( tag[i] == ' ' )
+		{
+			return tag.substr(0, i);
+			break;
+		}
+	}
+	
+	return tag;
+}
+
+string parseDescriptionFromTag(string tag)
+{
+	for ( int i = 0; i < tag.length(); i++ )
+	{
+		if ( tag[i] == ' ' )
+		{
+			return tag.substr(i);
+			break;
+		}
+	}
+	
+	return "";
 }

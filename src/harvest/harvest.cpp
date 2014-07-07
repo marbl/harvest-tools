@@ -62,8 +62,8 @@ int main(int argc, const char * argv[])
 				case 'o': output = argv[++i]; break;
 				case 'q': quiet = true; break;
 				case 'S': outSnp = argv[++i]; break;
-				case 'V': outVcf = argv[++i]; break;
 				case 'v': vcf = argv[++i]; break;
+				case 'V': outVcf = argv[++i]; break;
 				case 'x': xmfa = argv[++i]; break;
 				case 'X': outXmfa = argv[++i]; break;
 				
@@ -102,38 +102,43 @@ int main(int argc, const char * argv[])
 	
 	if ( input )
 	{
+		if ( ! quiet ) cerr << "Loading " << input << "..." << endl;
 		hio.loadHarvest(input);
 	}
 	
 	if ( mfa )
 	{
+		if ( ! quiet ) cerr << "Loading " << mfa << "..." << endl;
 		hio.loadMFA(mfa, vcf == 0);
 	}
 	
 	if ( fasta )
 	{
+		if ( ! quiet ) cerr << "Loading " << fasta << "..." << endl;
 		hio.loadFasta(fasta);
 	}
 	
 	for ( int i = 0; i < genbank.size(); i++ )
 	{
+		if ( ! quiet ) cerr << "Loading " << genbank[i] << "..." << endl;
 		hio.loadGenbank(genbank[i]);
 	}
 	
 	if ( xmfa )
 	{
-		if (!quiet)
-			printf("Loading %s...\n", xmfa);
+		if ( ! quiet ) cerr << "Loading " << xmfa << "..." << endl;
 		hio.loadXmfa(xmfa, vcf == 0);
 	}
 	
 	if ( newick )
 	{
+		if ( ! quiet ) cerr << "Loading " << newick << "..." << endl;
 		hio.loadNewick(newick);
 	}
 	
 	if ( vcf )
 	{
+		if ( ! quiet ) cerr << "Loading " << vcf << "..." << endl;
 		hio.loadVcf(vcf);
 	}
 	

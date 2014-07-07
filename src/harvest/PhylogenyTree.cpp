@@ -152,7 +152,7 @@ void PhylogenyTree::midpointReroot()
 	
 	float depth = 0;
 	
-	while ( depth + node->getDistance() < midDistance )
+	while ( depth + node->getDistance() < midDistance && node->getParent() )
 	{
 		depth += node->getDistance();
 		node = node->getParent();

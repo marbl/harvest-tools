@@ -495,7 +495,7 @@ void VariantList::writeToMfa(std::ostream &out, bool indels, const TrackList & t
 		
 		for ( int j = 0; j < variants.size(); j++ )
 		{
-			if ( ! indels && variants.at(j).filters && variants.at(j).filters != FILTER_n) )
+			if ( ! indels && variants.at(j).filters && variants.at(j).filters != FILTER_n )
 			{
 				continue;
 			}

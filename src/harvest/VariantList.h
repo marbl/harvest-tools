@@ -73,6 +73,8 @@ private:
 		FILTER_indel = 1,
 		FILTER_n = 2,
 		FILTER_lcb = 4,
+		FILTER_conservation = 8,
+		FILTER_gaps = 16,
 	};
 	
 	void addFilter(long long int flag, std::string name, std::string description);

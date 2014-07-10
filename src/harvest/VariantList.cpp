@@ -62,9 +62,55 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 {
 //	Harvest::Variation * msg = harvest.mutable_variation();
 	char col[seqs.size() + 1];
+        //add arrays for tracking conserved,poorly aligned columns
+	vector<bool> conserved(seqs[0].length()+1,true);
+	vector<bool> gaps(seqs[0].length()+1,false);
+	vector<bool> nns(seqs[0].length()+1,false);
 	int offset = 0;
 	
 	col[seqs.size()] = 0;
+	
+        //simple loop to check for column conservation
+        //this could be done via SP-score all-v-all pairs
+        //but for now, simply use to flag SNPs that are within a window of 100bp
+        //with less than 50% column conservation (w.r.t ref, not consensus)
+	for ( int i = 0; i < seqs[0].length(); i++ )
+	{
+		col[0] = seqs[0][i];
+                bool variant = false;
+                bool indel = false;
+                vector<int> nt_cnt(5,0);
+                vector<int>::iterator maxval;
+		for (int j = 0; j < seqs.size(); j++)
+		{
+                    col[j] = seqs[j][i];
+
+  		    if (col[j] == 'a' || col[j] == 'A')
+		      nt_cnt[0] =1;
+  		    else if (col[j] == 't' || col[j] == 'T')
+		      nt_cnt[1] =1;
+  		    else if (col[j] == 'g' || col[j] == 'G')
+		      nt_cnt[2] =1;
+  		    else if (col[j] == 'c' || col[j] == 'C')
+		      nt_cnt[3] =1;
+  		    else if (col[j] == 'n' || col[j] == 'N')
+		      nns[i] = true;
+  		    else if (col[j] == '-')
+		    {
+		      gaps[i] = true;
+                      nt_cnt[4] = 1;
+		    }
+                }
+                maxval = std::max_element(nt_cnt.begin(),nt_cnt.end());
+                if ((nt_cnt[0] + nt_cnt[1] + nt_cnt[2] + nt_cnt[3] +nt_cnt[4]) > 1)
+                  conserved[i] = false;
+                /*multi-allelic
+                if ((nt_cnt[0] + nt_cnt[1] + nt_cnt[2] + nt_cnt[3] +nt_cnt[4]) > 2)
+		{
+		  conserved[i] = false;
+		}
+                */
+	}
 	
 	// Since insertions to the reference take on the left-most reference
 	// position, this allows the alignment to start with an insertion
@@ -123,6 +169,46 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 				sequence++;
 			}
 			
+			int windowsize = 0;
+                        int window = 50;
+                        if (window > i)
+			{
+			  window = i -1;
+			}
+                        windowsize+=window;
+                        int conserved_cnt = 0;
+                        int gap_cnt = 0;
+                        for (int z = 1; z<=window;z++)
+			{
+			  if (conserved.at(i-z))
+			  {
+			    conserved_cnt+=1;
+			  }
+
+			  if (gaps.at(i-z))
+			  {
+			    gap_cnt+=1;
+			  }
+            
+			}
+                        window = 50;
+                        if (window+i > seqs[0].length())
+			{
+			  window = seqs[0].length() - i;
+			}
+                        windowsize+=window;
+                        for (int z = 1; z<=window;z++)
+			{
+			  if (conserved.at(i+z))
+			  {
+			    conserved_cnt+=1;
+			  }
+			  if (gaps.at(i+z))
+			  {
+			    gap_cnt+=1;
+			  }
+			}
+			
 			varNew->sequence = sequence;
 			varNew->position = position;
 			varNew->offset = offset;
@@ -144,6 +230,15 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 				varNew->filters |= FILTER_lcb;
 			}
 			
+                        if ( ((float)conserved_cnt/(float)windowsize) < 0.5 )
+			{
+				varNew->filters |= FILTER_conservation;
+			}
+                        if ( ((float)gap_cnt/(float)windowsize) > 0.2 )
+			{
+				varNew->filters |= FILTER_gaps;
+			}
+			
 			varNew->quality = 0;
 		}
 	}
@@ -161,6 +256,8 @@ void VariantList::init()
 	addFilter(FILTER_indel, "IND", "Column contains indel");
 	addFilter(FILTER_n, "N", "Column contains N");
 	addFilter(FILTER_lcb, "LCB", "LCB smaller than 200bp");
+	addFilter(FILTER_conservation, "CID", "SNP in aligned 100bp window with < 50% column % ID");
+	addFilter(FILTER_gaps, "ALN", "SNP in aligned 100b window with > 20 indels");
 	
 	variants.resize(0);
 }
@@ -398,7 +495,7 @@ void VariantList::writeToMfa(std::ostream &out, bool indels, const TrackList & t
 		
 		for ( int j = 0; j < variants.size(); j++ )
 		{
-			if ( ! indels && (variants.at(j).filters & FILTER_indel) )
+			if ( ! indels && variants.at(j).filters && variants.at(j).filters != FILTER_n) )
 			{
 				continue;
 			}

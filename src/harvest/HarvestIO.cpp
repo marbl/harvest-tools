@@ -184,51 +184,50 @@ void HarvestIO::writeBackbone(std::ostream &out) const
 {
 	int i = 0;
 	
-	for ( i = 0; i < harvest.tracks().tracks_size()-1; i++ )
+	for ( i = 0; i < trackList.getTrackCount(); i++ )
 	{
-		const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
-		out << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << "_start\t";
-		out << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << "_end\t";
+		const TrackList::Track & track = trackList.getTrack(i);
+		out << (track.name.length() ? track.name : track.file) << "_start\t";
+		out << (track.name.length() ? track.name : track.file) << "_end";
+		
+		if ( i == trackList.getTrackCount() - 1 )
+		{
+			out << endl;
+		}
+		else
+		{
+			out << '\t';
+		}
 	}
 	
-	const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
-	out << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << "_start\t";
-	out << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file()) << "_end\n";
-	
 	//now iterate over alignments
-	const Harvest::Alignment & msgAlignment = harvest.alignment();
-	for ( int j = 0; j < msgAlignment.lcbs_size(); j++ )
+	for ( int j = 0; j < lcbList.getLcbCount(); j++ )
 	{
-        
-  	    const Harvest::Alignment::Lcb & msgLcb = msgAlignment.lcbs(j);
+  	    const LcbList::Lcb & lcb = lcbList.getLcb(j);
             int r = 0;
-            for (r= 0; r < msgLcb.regions_size()-1; r++)
+            for (r= 0; r < lcb.regions.size(); r++)
 	    {
-	          const Harvest::Alignment::Lcb::Region & msgRegion = msgLcb.regions(r);
-                  int start = msgRegion.position();
-                  int end = msgRegion.position()+msgRegion.length();
-                  if (!msgRegion.reverse())
+	          const LcbList::Region & region = lcb.regions.at(r);
+                  int start = region.position + 1;
+                  int end = region.position + region.length;
+                  if (!region.reverse)
 		  {
-		    out << start << "\t" << end << "\t";
+		    out << start << "\t" << end;
 		  }
                   else
 		  {
-		    out << -1*start << "\t" << -1*end << "\t";
+		    out << -1*start << "\t" << -1*end;
 		  }
-                  
+		  
+		  if ( r == lcb.regions.size() - 1 )
+		  {
+		  	out << endl;
+		  }
+		  else
+		  {
+		  	out << '\t';
+		  }
 	    }
-	   const Harvest::Alignment::Lcb::Region & msgRegion = msgLcb.regions(r);
-           int start = msgRegion.position();
-           int  end = msgRegion.position()+msgRegion.length();
-           if (!msgRegion.reverse())
-	   {
-		out << start << "\t" << end << "\n";
-	   }
-           else
-	   {
-	        out << -1*start << "\t" << -1*end << "\n";
-	   }
-
 	}
 
 }

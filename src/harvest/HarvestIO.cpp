@@ -18,6 +18,16 @@ HarvestIO::HarvestIO()
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 }
 
+void HarvestIO::clear()
+{
+	referenceList.clear();
+	trackList.clear();
+	lcbList.clear();
+	variantList.clear();
+	annotationList.clear();
+	phylogenyTree.clear();
+}
+
 void HarvestIO::loadBed(const char * file, const char * name, const char * desc)
 {
 	variantList.addFilterFromBed(file, name, desc);
@@ -100,7 +110,7 @@ void HarvestIO::loadVcf(const char * file)
 
 void HarvestIO::loadXmfa(const char * file, bool findVariants)
 {
-	lcbList.initFromXmfa(file, referenceList, &trackList, &phylogenyTree, findVariants ? &variantList : 0);
+	lcbList.initFromXmfa(file, &referenceList, &trackList, &phylogenyTree, findVariants ? &variantList : 0);
 }
 
 void HarvestIO::writeFasta(std::ostream &out) const
@@ -225,36 +235,7 @@ void HarvestIO::writeBackbone(std::ostream &out) const
 
 void HarvestIO::writeSnp(std::ostream &out, bool indels) const
 {
-	int wrap = 80;
-	int col;
-	
-	for ( int i = 0; i < harvest.tracks().tracks_size(); i++ )
-	{
-		const Harvest::TrackList::Track & msgTrack = harvest.tracks().tracks(i);
-		out << '>' << (msgTrack.has_file() ? msgTrack.file() : msgTrack.name()) << '\n';
-		col = 0;
-		
-		for ( int j = 0; j < harvest.variation().variants_size(); j++ )
-		{
-			if ( ! indels && harvest.variation().variants(j).filters() )
-			{
-				continue;
-			}
-			
-			col++;
-			
-			if ( wrap && col > wrap )
-			{
-				out << '\n';
-				col = 1;
-			}
-			
-			out << harvest.variation().variants(j).alleles()[i];
-		}
-		
-		out << '\n';
-	}
-	
+	variantList.writeToMfa(out, indels, trackList);
 }
 
 void HarvestIO::writeVcf(std::ostream &out, bool indels) const

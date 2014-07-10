@@ -34,6 +34,7 @@ public:
 	
 	void addFilterFromBed(const char * file, const char * name, const char * desc);
 	void addVariantsFromAlignment(const std::vector<std::string> & seqs, const ReferenceList & referenceList, int sequence, int position, bool lcbfilt);
+	void clear();
 	const Filter & getFilter(int index) const;
 	int getFilterCount() const;
 	const Variant & getVariant(int index) const;
@@ -42,6 +43,7 @@ public:
 	void initFromProtocolBuffer(const Harvest::Variation & msgVariation);
 	void initFromVcf(const char * file, const ReferenceList & referenceList, TrackList * trackList, LcbList * lcbList, PhylogenyTree * phylogenyTree);
 	void sortVariants();
+	void writeToMfa(std::ostream &out, bool indels, const TrackList & trackList) const;
 	void writeToProtocolBuffer(Harvest * harvest) const;
 	void writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const TrackList & trackList) const;
 	

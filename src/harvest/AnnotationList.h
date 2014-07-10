@@ -22,6 +22,7 @@ class AnnotationList
 {
 public:
 	
+	void clear();
 	int getAnnotationCount() const;
 	const Annotation & getAnnotation(int index) const;
 	void initFromGenbank(const char * file, const ReferenceList & referenceList);

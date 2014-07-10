@@ -30,4 +30,6 @@ void ungap(string & gapped)
 			pos++;
 		}
 	}
+	
+	gapped.resize(pos);
 }

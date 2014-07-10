@@ -223,7 +223,7 @@ int main(int argc, const char * argv[])
 			fp = &fout;
 		}
 		
-		hio.writeSnp(*fp, true);
+		hio.writeSnp(*fp, false);
 	}
 
 	if ( outBB )

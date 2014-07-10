@@ -16,6 +16,12 @@ int TrackList::addTrack(const char * file, int size, const char * name, TrackTyp
 	return tracks.size() - 1;
 }
 
+void TrackList::clear()
+{
+	tracks.clear();
+	tracksByFile.clear();
+}
+
 int TrackList::getTrackIndexByFile(const char * file) const
 {
 	return tracksByFile.at(file);

@@ -20,6 +20,11 @@ bool lcbLessThan(const LcbList::Lcb a, const LcbList::Lcb & b)
 	}
 }
 
+void LcbList::clear()
+{
+	lcbs.clear();
+}
+
 void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList)
 {
 	lcbs.resize(0);
@@ -128,7 +133,7 @@ void LcbList::initFromProtocolBuffer(const Harvest::Alignment & msgAlignment)
 	}
 }
 
-void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList)
+void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList)
 {
 	lcbs.resize(0);
 	
@@ -138,6 +143,9 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 	vector<string> seqs;
 	bool oldTags = trackList->getTrackCount();
 	int * trackIndecesNew;
+	bool mauve = false;
+	string ref;
+	bool createReference = referenceList->getReferenceCount() == 0;
 	
 	if ( variantList )
 	{
@@ -149,7 +157,7 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 		trackIndecesNew = new int[trackList->getTrackCount()];
 	}
 	
-	LcbList::Lcb * lcb;
+	LcbList::Lcb * lcb = 0;
 	
 	int lcbLength = 0;
 	
@@ -162,9 +170,49 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 		
 		if ( *line == '#' )
 		{
-			const char * suffix;
+			char * suffix;
 			
-			if ( (suffix = removePrefix(line, "##SequenceFile ")) )
+			if ( (suffix = removePrefix(line, "#FormatVersion ")) )
+			{
+				if ( removePrefix(suffix, "Mauve") )
+				{
+					mauve = true;
+				}
+			}
+			else if ( mauve && (suffix = removePrefix(line, "#Sequence")) )
+			{
+				while ( *suffix >= '0' && *suffix <= '9' )
+				{
+					suffix++;
+				}
+				
+				if ( (suffix = removePrefix(suffix, "File\t")) )
+				{
+					if ( oldTags )
+					{
+						track = &trackList->getTrackMutable(trackIndex);
+						trackIndecesNew[trackList->getTrackIndexByFile(suffix)] = trackIndex;
+					}
+					else
+					{
+						track = &trackList->getTrackMutable(trackList->addTrack(suffix));
+					}
+					
+					char * name = suffix;
+					
+					for ( int i = 0; i < strlen(suffix) - 1; i++ )
+					{
+						if ( suffix[i] == '/' )
+						{
+							name = suffix + i + 1;
+						}
+					}
+					
+					track->file = name;
+					trackIndex++;
+				}
+			}
+			else if ( (suffix = removePrefix(line, "##SequenceFile ")) )
 			{
 				if ( oldTags )
 				{
@@ -192,9 +240,16 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 		}
 		else if ( *line == '>' )
 		{
-			trackIndex = atoi(strtok(line, ":") + 1) - 1;
+			char * suffix = line + 1;
 			
-			if ( trackIndex == 0 )
+			while ( *suffix == ' ' )
+			{
+				suffix++;
+			}
+			
+			trackIndex = atoi(strtok(suffix, ":")) - 1;
+			
+			if ( lcb == 0 )
 			{
 				if ( variantList && lcbs.size() == 0 )
 				{
@@ -221,14 +276,39 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 			LcbList::Region * region = &lcb->regions[trackIndex];
 			
 			region->position = atoi(strtok(0, "-"));
+			
+			if ( mauve )
+			{
+				region->position--;
+			}
+			
 			int end = atoi(strtok(0, " "));
+			
+			if ( mauve )
+			{
+				end--;
+			}
+			
 			region->length = end - region->position + 1;
 			region->reverse = *strtok(0, " ") == '-';
 			
 			if ( trackIndex == 0 )
 			{
-				lcb->sequence = referenceList.getReferenceSequenceFromConcatenated(region->position);
-				lcb->position = referenceList.getPositionFromConcatenated(lcb->sequence, region->position);
+				if ( createReference )
+				{
+					lcb->sequence = 0;
+					lcb->position = region->position;
+					
+					if ( end > ref.length() )
+					{
+						ref.resize(end, 'N');
+					}
+				}
+				else
+				{
+					lcb->sequence = referenceList->getReferenceSequenceFromConcatenated(region->position);
+					lcb->position = referenceList->getPositionFromConcatenated(lcb->sequence, region->position);
+				}
 			}
 		}
 		else if ( variantList && *line == '=' )
@@ -246,8 +326,31 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 			
 			if ( all )
 			{
-				variantList->addVariantsFromAlignment(seqs, referenceList, lcb->sequence, lcb->position, lcbLength < 200 ? true : false);
+				for ( int i = 0; i < seqs.size(); i++ )
+				{
+					for ( int j = 0; j < seqs[i].length(); j++ )
+					{
+						seqs[i][j] = toupper(seqs[i][j]);
+					}
+				}
+				
+				if ( createReference )
+				{
+					string ungapped = seqs[0];
+					ungap(ungapped);
+					ref.replace(lcb->position, ungapped.length(), ungapped);
+				}
+				
+				variantList->addVariantsFromAlignment(seqs, *referenceList, lcb->sequence, lcb->position, lcbLength < 200 ? true : false);
 			}
+			else
+			{
+				// not core; destroy
+				
+				lcbs.resize(lcbs.size() - 1);
+			}
+			
+			lcb = 0;
 			
 			for ( int i = 0; i < seqs.size(); i++ )
 			{
@@ -258,6 +361,7 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 		{
 			seqs[trackIndex].append(line);
 		}
+		
 		if ( *line != '=' && *line != '>' && *line != '#')
 		{
 			if ( trackIndex == 0 )
@@ -267,7 +371,11 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 		}
 		else if (*line == '=')
 		{
-			lcb->length = lcbLength;
+			if ( lcb )
+			{
+				lcb->length = lcbLength;
+			}
+			
 			lcbLength = 0;
 		}
 	}
@@ -277,6 +385,11 @@ void LcbList::initFromXmfa(const char * file, const ReferenceList & referenceLis
 		trackList->setTracksByFile();
 		phylogenyTree->setTrackIndeces(trackIndecesNew);
 		delete [] trackIndecesNew;
+	}
+	
+	if ( createReference )
+	{
+		referenceList->addReference(trackList->getTrack(0).file, ref);
 	}
 	
 	sort(lcbs.begin(), lcbs.end(), lcbLessThan);
@@ -387,8 +500,8 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 			// >1:8230-11010 + cluster174 s1:p8230
 			
 			const LcbList::Region & region = lcb.regions.at(r);
-			int start = region.position + 1;
-			int end = start + region.length - 1;
+			int start = region.position;
+			int end = start + region.length;
 			
 			if (r == 0)
 			{
@@ -417,6 +530,11 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 			int variantsSize = variantList.getVariantCount();
 			const VariantList::Variant * currvarref = &variantList.getVariant(currvar);
 			
+			if ( currvarref->alleles[0] == '-' )
+			{
+				currpos--;
+			}
+			
 			//var =  harvest.variation().variants(currvar);//.alleles()[r];
 			//string ref_slice(harvest.reference().references(0).sequence().substr(refstart,(end-start)+1));
 			
@@ -443,16 +561,23 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 				if
 				(
 					currvar == variantsSize ||
-					currpos != currvarref->position ||
+					(currpos != currvarref->position && currpos >= refstart) ||
 					(
 						currvarref->alleles[0] == '-' &&
 						currvar > 0 &&
-						variantList.getVariant(currvar - 1).position != currpos
+						variantList.getVariant(currvar - 1).position != currpos &&
+						currpos >= refstart
 					)
 				)
 				{
-					out << referenceList.getReference(0).sequence.substr(currpos, 1);
+					out << referenceList.getReference(0).sequence.at(currpos);
 					col++;
+				
+					if ( col == width )
+					{
+						out << endl;
+						col = 0;
+					}
 				}
 				
 				if ( currvar < variantsSize && currpos == currvarref->position )

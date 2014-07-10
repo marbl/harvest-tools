@@ -149,6 +149,12 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 	}
 }
 
+void VariantList::clear()
+{
+	filters.clear();
+	variants.clear();
+}
+
 void VariantList::init()
 {
 	filters.resize(0);
@@ -376,6 +382,40 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 void VariantList::sortVariants()
 {
 	sort(variants.begin(), variants.end(), variantLessThan);
+}
+
+void VariantList::writeToMfa(std::ostream &out, bool indels, const TrackList & trackList) const
+{
+	int wrap = 80;
+	int col;
+	
+	for ( int i = 0; i < trackList.getTrackCount(); i++ )
+	{
+		const TrackList::Track & track = trackList.getTrack(i);
+		
+		out << '>' << (track.file.length() ? track.file : track.name) << endl;
+		col = 0;
+		
+		for ( int j = 0; j < variants.size(); j++ )
+		{
+			if ( ! indels && (variants.at(j).filters & FILTER_indel) )
+			{
+				continue;
+			}
+			
+			col++;
+			
+			if ( wrap && col > wrap )
+			{
+				out << endl;
+				col = 1;
+			}
+			
+			out << variants.at(j).alleles[i];
+		}
+		
+		out << endl;
+	}
 }
 
 void VariantList::writeToProtocolBuffer(Harvest * msg) const

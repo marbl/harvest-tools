@@ -36,6 +36,7 @@ public:
 	};
 	
 	int addTrack(const char * file, int size = 0, const char * name = "", TrackType type = NONE);
+	void clear();
 	const Track & getTrack(int index) const;
 	Track & getTrackMutable(int index);
 	int getTrackIndexByFile(const char * file) const;

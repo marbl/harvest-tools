@@ -19,6 +19,8 @@ public:
 
 	HarvestIO();
 	
+	void clear();
+	
 	void loadBed(const char * file, const char * name, const char * desc);
 	void loadFasta(const char * file);
 	void loadGenbank(const char * file);

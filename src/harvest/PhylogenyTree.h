@@ -15,6 +15,7 @@ public:
 	PhylogenyTree();
 	~PhylogenyTree();
 	
+	void clear();
 	const PhylogenyTreeNode * getLeaf(int id) const;
 	void getLeafIds(std::vector<int> & ids) const;
 	int getNodeCount() const;

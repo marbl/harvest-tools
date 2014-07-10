@@ -5,6 +5,11 @@
 
 using namespace std;
 
+void AnnotationList::clear()
+{
+	annotations.clear();
+}
+
 void AnnotationList::initFromGenbank(const char * file, const ReferenceList & referenceList)
 {
 	ifstream in(file);

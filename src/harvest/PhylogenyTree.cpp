@@ -17,6 +17,17 @@ PhylogenyTree::~PhylogenyTree()
 	}
 }
 
+void PhylogenyTree::clear()
+{
+	leaves.clear();
+	
+	if ( root )
+	{
+		delete root;
+		root = 0;
+	}
+}
+
 void PhylogenyTree::getLeafIds(vector<int> & ids) const
 {
 	ids.resize(0);
@@ -27,6 +38,7 @@ void PhylogenyTree::init()
 {
 	int leaf = 0;
 	
+	nodeCount = 0;
 	root->initialize(nodeCount, leaf);
 	leaves.resize(0);
 	root->getLeaves(leaves);
@@ -61,7 +73,6 @@ void PhylogenyTree::initFromProtocolBuffer(const Harvest::Tree & msg)
 		delete root;
 	}
 	
-	nodeCount = 0;
 	int leaf = 0;
 	root = new PhylogenyTreeNode(msg.root());
 	init();

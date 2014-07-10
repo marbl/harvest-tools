@@ -82,7 +82,7 @@ message Harvest
 		message Variant
 		{
 			optional uint32 sequence = 1; // 0-index to 'Reference.references'
-			optional uint32 position = 2; // ungapped ref pos; dupl. for ins.
+			optional int32 position = 2; // ungapped ref pos; dupl. for ins.
 			optional string alleles = 3; // column of multialignment
 			optional uint64 filters = 4; // bit field of 'Filter.flag'
 			optional uint32 quality = 5;

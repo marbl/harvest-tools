@@ -35,13 +35,31 @@ public:
 		TrackType type;
 	};
 	
+	class TrackNotFoundException : public std::exception
+	{
+	public:
+		
+		TrackNotFoundException(const std::string & nameNew)
+		{
+			name = nameNew;
+		}
+		
+		virtual ~TrackNotFoundException() throw() {}
+		
+		std::string name;
+	};
+	
+	TrackList();
+	
 	int addTrack(const char * file, int size = 0, const char * name = "", TrackType type = NONE);
 	void clear();
 	const Track & getTrack(int index) const;
-	Track & getTrackMutable(int index);
-	int getTrackIndexByFile(const char * file) const;
 	int getTrackCount() const;
+	int getTrackIndexByFile(const char * file) const;
+	Track & getTrackMutable(int index);
+	int getTrackReference() const;
 	void initFromProtocolBuffer(const Harvest::TrackList & msg);
+	void setTrackReference(int trackReferenceNew);
 	void setTracksByFile();
 	void writeToProtocolBuffer(Harvest * msg);
 	
@@ -53,6 +71,8 @@ private:
 };
 
 inline const TrackList::Track & TrackList::getTrack(int index) const { return tracks[index]; }
-inline TrackList::Track & TrackList::getTrackMutable(int index) { return tracks[index]; }
 inline int TrackList::getTrackCount() const { return tracks.size(); }
+inline TrackList::Track & TrackList::getTrackMutable(int index) { return tracks[index]; }
+inline int TrackList::getTrackReference() const { return trackReference; }
+inline void TrackList::setTrackReference(int trackReferenceNew) { trackReference = trackReferenceNew; }
 #endif

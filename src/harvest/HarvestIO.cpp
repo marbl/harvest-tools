@@ -47,6 +47,11 @@ bool HarvestIO::loadHarvest(const char * file)
 {
 	int fd = open(file, O_RDONLY);
 	
+	if ( fd < 0 )
+	{
+		return false;
+	}
+	
 	FileInputStream raw_input(fd);
 	GzipInputStream gz(&raw_input);
 	CodedInputStream coded_input(&gz);
@@ -100,6 +105,11 @@ void HarvestIO::loadMFA(const char * file, bool findVariants)
 
 void HarvestIO::loadNewick(const char * file)
 {
+	if ( lcbList.getLcbCount() == 0 )
+	{
+		trackList.clear();
+	}
+	
 	phylogenyTree.initFromNewick(file, &trackList);
 }
 

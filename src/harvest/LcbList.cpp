@@ -32,13 +32,17 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 	ifstream in(file);
 	char line[1 << 20];
 	vector<string> seqs;
-	bool oldTags = trackList->getTrackCount();
+	const bool oldTags = phylogenyTree->getRoot();
 	string refTag;
 	int * trackIndecesNew;
 	
 	if ( oldTags )
 	{
 		trackIndecesNew = new int[trackList->getTrackCount()];
+	}
+	else
+	{
+		trackList->clear();
 	}
 	
 	while ( ! in.eof() )
@@ -64,7 +68,17 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 			if ( oldTags )
 			{
 				track = &trackList->getTrackMutable(seqs.size());
-				trackIndecesNew[trackList->getTrackIndexByFile(tag.c_str())] = seqs.size();
+				
+				try
+				{
+					trackIndecesNew[trackList->getTrackIndexByFile(tag.c_str())] = seqs.size();
+				}
+				catch ( const TrackList::TrackNotFoundException & e )
+				{
+					delete [] trackIndecesNew;
+					throw;
+					return;
+				}
 			}
 			else
 			{
@@ -141,7 +155,7 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 	char line[1 << 20];
 	int trackIndex = 0;
 	vector<string> seqs;
-	bool oldTags = trackList->getTrackCount();
+	const bool oldTags = phylogenyTree->getRoot();
 	int * trackIndecesNew;
 	bool mauve = false;
 	string ref;
@@ -155,6 +169,10 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 	if ( oldTags )
 	{
 		trackIndecesNew = new int[trackList->getTrackCount()];
+	}
+	else
+	{
+		trackList->clear();
 	}
 	
 	LcbList::Lcb * lcb = 0;
@@ -191,7 +209,17 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 					if ( oldTags )
 					{
 						track = &trackList->getTrackMutable(trackIndex);
-						trackIndecesNew[trackList->getTrackIndexByFile(suffix)] = trackIndex;
+						
+						try
+						{
+							trackIndecesNew[trackList->getTrackIndexByFile(suffix)] = trackIndex;
+						}
+						catch ( const TrackList::TrackNotFoundException & e )
+						{
+							delete [] trackIndecesNew;
+							throw;
+							return;
+						}
 					}
 					else
 					{
@@ -217,7 +245,17 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 				if ( oldTags )
 				{
 					track = &trackList->getTrackMutable(trackIndex);
-					trackIndecesNew[trackList->getTrackIndexByFile(suffix)] = trackIndex;
+					
+					try
+					{
+						trackIndecesNew[trackList->getTrackIndexByFile(suffix)] = trackIndex;
+					}
+					catch ( const TrackList::TrackNotFoundException & e )
+					{
+						delete [] trackIndecesNew;
+						throw;
+						return;
+					}
 				}
 				else
 				{

@@ -55,6 +55,8 @@ int ReferenceList::getReferenceSequenceFromGi(long int gi) const
 		}
 	}
 	
+	throw GiNotFoundException(std::to_string(gi));
+	
 	return undef;
 }
 

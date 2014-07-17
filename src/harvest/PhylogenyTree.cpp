@@ -59,7 +59,16 @@ void PhylogenyTree::initFromNewick(const char * file, TrackList * trackList)
 	while ( in.getline(line, (1 << 20) - 1) )
 	{
 		char * token = line;
-		root = new PhylogenyTreeNode(token, trackList, useNames);
+		
+		try
+		{
+			root = new PhylogenyTreeNode(token, trackList, useNames);
+		}
+		catch ( const TrackList::TrackNotFoundException & e )
+		{
+			root = 0;
+			throw;
+		}
 	}
 	
 	in.close();

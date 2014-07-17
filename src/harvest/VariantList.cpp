@@ -366,7 +366,18 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 					if ( oldTags )
 					{
 						track = &trackList->getTrackMutable(n); // TODO: clear track
-						trackIndecesNew[trackList->getTrackIndexByFile(token)] = n;
+						
+						try
+						{
+							trackIndecesNew[trackList->getTrackIndexByFile(token)] = n;
+						}
+						catch ( const TrackList::TrackNotFoundException & e )
+						{
+							delete [] trackIndecesNew;
+							throw;
+							return;
+						}
+						
 						n++;
 					}
 					else

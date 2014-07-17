@@ -2,6 +2,11 @@
 
 using namespace::std;
 
+TrackList::TrackList()
+{
+	trackReference = 0;
+}
+
 int TrackList::addTrack(const char * file, int size, const char * name, TrackType type)
 {
 	tracks.resize(tracks.size() + 1);
@@ -20,11 +25,20 @@ void TrackList::clear()
 {
 	tracks.clear();
 	tracksByFile.clear();
+	trackReference = 0;
 }
 
 int TrackList::getTrackIndexByFile(const char * file) const
 {
-	return tracksByFile.at(file);
+	try
+	{
+		return tracksByFile.at(file);
+	}
+	catch ( const out_of_range & e )
+	{
+		throw TrackNotFoundException(file);
+		return -1;
+	}
 }
 
 void TrackList::initFromProtocolBuffer(const Harvest::TrackList & msg)
@@ -55,6 +69,11 @@ void TrackList::initFromProtocolBuffer(const Harvest::TrackList & msg)
 	}
 	
 	setTracksByFile();
+	
+	if ( msg.has_variantreference() )
+	{
+		trackReference = msg.variantreference();
+	}
 }
 
 void TrackList::setTracksByFile()
@@ -93,4 +112,6 @@ void TrackList::writeToProtocolBuffer(Harvest * msg)
 			msgTrack->set_type((Harvest::TrackList::Track::Type)track.type);
 		}
 	}
+	
+	msg->mutable_tracks()->set_variantreference(trackReference);
 }

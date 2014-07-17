@@ -20,6 +20,20 @@ class ReferenceList
 {
 public:
 	
+	class GiNotFoundException : public std::exception
+	{
+	public:
+		
+		GiNotFoundException(const std::string & giNew)
+		{
+			gi = giNew;
+		}
+		
+		virtual ~GiNotFoundException() throw() {}
+		
+		std::string gi;
+	};
+	
 	void addReference(std::string name, std::string sequence);
 	void clear();
 	int getPositionFromConcatenated(int sequence, long int position) const;

@@ -1,10 +1,8 @@
+// Copyright © 2014, Battelle National Biodefense Institute (BNBI);
+// all rights reserved. Authored by: Brian Ondov, Todd Treangen, and
+// Adam Phillippy
 //
-//  main.cpp
-//  harvest
-//
-//  Created by Brian Ondov on 6/19/13.
-//
-//
+// See the LICENSE.txt file included with this software for license information.
 
 #include <iostream>
 #include <fstream>

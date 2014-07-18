@@ -1,3 +1,8 @@
+// Copyright © 2014, Battelle National Biodefense Institute (BNBI);
+// all rights reserved. Authored by: Brian Ondov, Todd Treangen, and
+// Adam Phillippy
+//
+// See the LICENSE.txt file included with this software for license information.
 
 #include <fstream>
 #include "ReferenceList.h"
@@ -55,7 +60,10 @@ int ReferenceList::getReferenceSequenceFromGi(long int gi) const
 		}
 	}
 	
-	throw GiNotFoundException(std::to_string(gi));
+	char giString[1024];
+	sprintf(giString, "%ld", gi);
+	
+	throw GiNotFoundException(giString);
 	
 	return undef;
 }

@@ -39,6 +39,7 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 	vector<string> seqs;
 	const bool oldTags = phylogenyTree->getRoot();
 	string refTag;
+	string refDesc;
 	int * trackIndecesNew;
 	
 	if ( oldTags )
@@ -60,12 +61,21 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 		if ( in.peek() == '>' )
 		{
 			in.getline(line, (1 << 20) - 1);
-			string tag(strtok(line + 1, " "));
-			string desc(strtok(0, "\n"));
+			string tag(strtok(line + 1, " \n"));
 			
 			if ( seqs.size() == 0 )
 			{
-				refTag = line + 1;
+				const char * desc = strtok(0, "\n");
+				
+				if ( desc )
+				{
+					refDesc = desc;
+				}
+			}
+			
+			if ( seqs.size() == 0 )
+			{
+				refTag = tag;
 			}
 			
 			TrackList::Track * track;
@@ -111,7 +121,7 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 	ungap(ref);
 	
 	referenceList->clear();
-	referenceList->addReference(refTag, ref);
+	referenceList->addReference(refTag, refDesc, ref);
 	
 	initWithSingleLcb(*referenceList, *trackList);
 	
@@ -432,7 +442,7 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 	
 	if ( createReference )
 	{
-		referenceList->addReference(trackList->getTrack(0).file, ref);
+		referenceList->addReference(trackList->getTrack(0).file, "", ref);
 	}
 	
 	sort(lcbs.begin(), lcbs.end(), lcbLessThan);

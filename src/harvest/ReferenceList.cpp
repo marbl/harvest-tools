@@ -9,10 +9,11 @@
 
 using namespace::std;
 
-void ReferenceList::addReference(string name, string sequence)
+void ReferenceList::addReference(string name, string desc, string sequence)
 {
 	references.resize(references.size() + 1);
 	references[references.size() - 1].name = name;
+	references[references.size() - 1].description = desc;
 	references[references.size() - 1].sequence = sequence;
 }
 

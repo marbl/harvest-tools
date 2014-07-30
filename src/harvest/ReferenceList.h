@@ -41,7 +41,7 @@ public:
 		std::string gi;
 	};
 	
-	void addReference(std::string name, std::string sequence);
+	void addReference(std::string name, std::string desc, std::string sequence);
 	void clear();
 	int getPositionFromConcatenated(int sequence, long int position) const;
 	const Reference & getReference(int index) const;

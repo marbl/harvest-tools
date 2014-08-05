@@ -9,6 +9,7 @@
 
 #include "harvest/pb/harvest.pb.h"
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include <map>

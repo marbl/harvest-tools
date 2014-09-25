@@ -116,10 +116,20 @@ int main(int argc, const char * argv[])
 		hio.loadFasta(fasta);
 	}
 	
-	for ( int i = 0; i < genbank.size(); i++ )
+	bool useSeq = hio.referenceList.getReferenceCount() == 0;
+	
+	try
 	{
-		if ( ! quiet ) cerr << "Loading " << genbank[i] << "..." << endl;
-		hio.loadGenbank(genbank[i]);
+		for ( int i = 0; i < genbank.size(); i++ )
+		{
+			if ( ! quiet ) cerr << "Loading " << genbank[i] << "..." << endl;
+			hio.loadGenbank(genbank[i], useSeq);
+		}
+	}
+	catch ( const AnnotationList::NoSequenceException & e )
+	{
+		cerr << "ERROR: No sequence in Genbank file (" << e.file << ") and no other reference loaded.\n";
+		return 1;
 	}
 	
 	if ( xmfa )

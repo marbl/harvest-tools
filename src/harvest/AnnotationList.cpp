@@ -15,7 +15,7 @@ void AnnotationList::clear()
 	annotations.clear();
 }
 
-void AnnotationList::initFromGenbank(const char * file, const ReferenceList & referenceList)
+void AnnotationList::initFromGenbank(const char * file, ReferenceList & referenceList, bool useSeq)
 {
 	ifstream in(file);
 	char line[1 << 20];
@@ -24,29 +24,64 @@ void AnnotationList::initFromGenbank(const char * file, const ReferenceList & re
 	
 	while ( ! in.eof() )
 	{
+		string locus;
+		string definition;
+		
+		if ( useSeq )
+		{
+			offset = 0;
+			
+			for ( int i = 0; i < referenceList.getReferenceCount(); i++ )
+			{
+				offset += referenceList.getReference(i).sequence.length();
+			}
+		}
+		
+		// header
+		
 		while ( in.getline(line, (1 << 20) - 1) )
 		{
-			if ( in.eof() )
+			char * token;
+			
+			if ( useSeq && (token = removePrefix(line, "LOCUS")) )
 			{
-				//printf("bad genbank\n");
-				return;
+				locus = strtok(token, " \t");
 			}
-		
-			if ( removePrefix(line, "VERSION") )
+			else if ( useSeq && (token = removePrefix(line, "DEFINITION")) )
+			{
+				do
+				{
+					while ( *token == ' ' )
+					{
+						token++;
+					}
+				
+					if ( definition.length() )
+					{
+						definition.append(" ");
+					}
+				
+					definition.append(token);
+				
+					in.getline(token, (1 << 20) - 1);
+				}
+				while ( *token == ' ' );
+			}
+			else if ( ! useSeq && removePrefix(line, "VERSION") )
 			{
 				if ( const char * giToken = strstr(line, " GI:") )
 				{
 					long int gi = atol(giToken + 4);
 					int sequence = referenceList.getReferenceSequenceFromGi(gi);
-				
+			
 					if ( sequence == undef )
 					{
 						printf("Couldn't find GI %ld in reference.\n", gi);
 						return;
 					}
-					
+				
 					offset = 0;
-					
+				
 					for ( int i = 0; i < sequence; i++ )
 					{
 						offset += referenceList.getReference(i).sequence.length();
@@ -58,7 +93,9 @@ void AnnotationList::initFromGenbank(const char * file, const ReferenceList & re
 				break;
 			}
 		}
-		
+	
+		// annotations
+	
 		while ( ! in.eof() )
 		{
 			in.getline(line, (1 << 20) - 1);
@@ -67,70 +104,70 @@ void AnnotationList::initFromGenbank(const char * file, const ReferenceList & re
 			{
 				break;
 			}
-			
+		
 			char * token = line;
 			char * suffix;
-			
+		
 			while ( *token == ' ' )
 			{
 				token++;
 			}
-			
+		
 			if ( token == line + 5 )
 			{
 				int start;
 				int end;
 				bool reverse;
-				
+			
 				string feature = strtok(token, " ");
-				
+			
 				token = strtok(0, " ");
-				
+			
 				suffix = removePrefix(token, "complement(");
 				reverse = suffix;
-				
+			
 				if ( suffix )
 				{
 					token = suffix;
 				}
-				
+			
 				suffix = removePrefix(token, "join(");
-				
+			
 				if ( suffix )
 				{
 					token = suffix;
 				}
-				
+			
 				suffix = removePrefix(token, "order(");
-				
+			
 				if ( suffix )
 				{
 					token = suffix;
 				}
-				
+			
 				suffix = removePrefix(token, "complement(");
-				
+			
 				if ( suffix )
 				{
 					reverse = true;
 					token = suffix;
 				}
-				
+			
 				if ( *token == '<' || *token == '>' )
 				{
 					token++;
 				}
-				
+			
 				start = atoi(strtok(token, ".")) + offset - 1;
 				end = atoi(strtok(0, ".,)<>")) + offset - 1;
-				
+			
 				if ( ! annotation || start != annotation->start || end != annotation->end || reverse != annotation->reverse )
 				{
 					if ( feature != "source" && feature != "misc_feature" )
 					{
 						annotations.resize(annotations.size() + 1);
 						annotation = &annotations.at(annotations.size() - 1);
-						
+					
 						annotation->start = start;
 						annotation->end = end;
 						annotation->reverse = reverse;
@@ -140,7 +177,7 @@ void AnnotationList::initFromGenbank(const char * file, const ReferenceList & re
 						annotation = 0;
 					}
 				}
-				
+			
 				if ( annotation )
 				{
 					annotation->feature = feature;
@@ -149,7 +186,7 @@ void AnnotationList::initFromGenbank(const char * file, const ReferenceList & re
 			else if ( annotation )
 			{
 				char * suffix;
-			
+		
 				if ( (suffix = removePrefix(token, "/locus_tag=\"")) )
 				{
 					annotation->locus = strtok(suffix, "\"");
@@ -161,7 +198,7 @@ void AnnotationList::initFromGenbank(const char * file, const ReferenceList & re
 				else if ( (suffix = removePrefix(token, "/product=\"")) )
 				{
 					annotation->description = suffix;
-				
+			
 					if ( annotation->description[annotation->description.length() - 1] == '"' )
 					{
 						annotation->description.resize(annotation->description.length() - 1);
@@ -171,7 +208,7 @@ void AnnotationList::initFromGenbank(const char * file, const ReferenceList & re
 					{
 						in.getline(line, (1 << 20) - 1);
 						suffix = line;
-					
+				
 						while ( *suffix == ' ' )
 						{
 							suffix++;
@@ -180,6 +217,54 @@ void AnnotationList::initFromGenbank(const char * file, const ReferenceList & re
 						annotation->description.append(suffix - 1, strlen(suffix));
 					}
 				}
+			}
+		}
+	
+		// sequence
+	
+		string sequence;
+	
+		while ( ! in.eof() && strcmp(line, "//") != 0 )
+		{
+			in.getline(line, (1 << 20) - 1);
+			
+			if ( useSeq )
+			{
+				if ( in.eof() || strcmp(line, "//") == 0 )
+				{
+					break;
+				}
+		
+				strtok(line, " "); // eat number
+				const char * token;
+		
+				while ( (token = strtok(0, " ")) )
+				{
+					sequence.append(token);
+				}
+			}
+		}
+		
+		if ( in.eof() )
+		{
+			break;
+		}
+		
+		if ( useSeq )
+		{
+			if ( sequence.length() )
+			{
+				for ( int i = 0; i < sequence.length(); i++ )
+				{
+					sequence[i] = toupper(sequence.at(i));
+				}
+			
+				referenceList.addReference(locus, definition, sequence);
+			}
+			else
+			{
+				clear();
+				throw NoSequenceException(file);
 			}
 		}
 	}
@@ -215,8 +300,9 @@ void AnnotationList::initFromProtocolBuffer(const Harvest::AnnotationList & msg,
 		
 		if ( sequence == referenceList.getReferenceCount() )
 		{
-			printf("ERROR: sequence %d not found in reference or annotation out of order in protobuf.\n", msgAnn.sequence());
-			exit(1);
+			offset = 0;
+			//printf("ERROR: sequence %d not found in reference or annotation out of order in protobuf.\n", msgAnn.sequence());
+			//exit(1);
 		}
 		
 		annotation.start = msgAnn.regions(0).start() + offset;
@@ -226,6 +312,8 @@ void AnnotationList::initFromProtocolBuffer(const Harvest::AnnotationList & msg,
 		annotation.locus = msgAnn.locus();
 		annotation.description = msgAnn.description();
 		annotation.feature = msgAnn.feature();
+		
+		//printf("%s\t%d\t%d\t%d\t%c\t%s\t%s\n", annotation.locus.c_str(), msgAnn.sequence(), annotation.start, annotation.end, annotation.reverse ? '-' : '+', annotation.name.c_str(), annotation.description.c_str());
 	}
 }
 
@@ -241,7 +329,7 @@ void AnnotationList::writeToProtocolBuffer(Harvest * harvest, const ReferenceLis
 		
 		Harvest::AnnotationList::Annotation * msgAnn = harvest->mutable_annotations()->add_annotations();
 		
-		if ( annotation.start >= offsetEnd )
+		while ( annotation.start >= offsetEnd && sequence < referenceList.getReferenceCount() - 1 )
 		{
 			sequence++;
 			offset = offsetEnd;

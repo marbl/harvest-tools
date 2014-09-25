@@ -9,6 +9,7 @@
 
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 #include "harvest/pb/harvest.pb.h"
 #include "harvest/ReferenceList.h"
@@ -28,10 +29,24 @@ class AnnotationList
 {
 public:
 	
+	class NoSequenceException : public std::exception
+	{
+	public:
+		
+		NoSequenceException(const std::string & fileNew)
+		{
+			file = fileNew;
+		}
+		
+		virtual ~NoSequenceException() throw() {}
+		
+		std::string file;
+	};
+	
 	void clear();
 	int getAnnotationCount() const;
 	const Annotation & getAnnotation(int index) const;
-	void initFromGenbank(const char * file, const ReferenceList & referenceList);
+	void initFromGenbank(const char * file, ReferenceList & referenceList, bool useSeq);
 	void initFromProtocolBuffer(const Harvest::AnnotationList & msg, const ReferenceList & referenceList);
 	void writeToProtocolBuffer(Harvest * msg, const ReferenceList & referenceList) const;
 	

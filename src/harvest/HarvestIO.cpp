@@ -42,9 +42,9 @@ void HarvestIO::loadFasta(const char * file)
 	referenceList.initFromFasta(file);
 }
 
-void HarvestIO::loadGenbank(const char * file)
+void HarvestIO::loadGenbank(const char * file, bool useSeq)
 {
-	annotationList.initFromGenbank(file, referenceList);
+	annotationList.initFromGenbank(file, referenceList, useSeq);
 }
 
 bool HarvestIO::loadHarvest(const char * file)

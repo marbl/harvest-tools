@@ -28,7 +28,7 @@ public:
 	
 	void loadBed(const char * file, const char * name, const char * desc);
 	void loadFasta(const char * file);
-	void loadGenbank(const char * file);
+	void loadGenbank(const char * file, bool useSeq);
 	bool loadHarvest(const char * file);
 	void loadMFA(const char * file, bool findVariants);
 	void loadNewick(const char * file);

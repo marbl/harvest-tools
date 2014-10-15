@@ -13,7 +13,7 @@ TrackList::TrackList()
 	trackReference = 0;
 }
 
-int TrackList::addTrack(const char * file, int size, const char * name, TrackType type)
+int TrackList::addTrack(const string & file, int size, const string & name, TrackType type)
 {
 	tracks.resize(tracks.size() + 1);
 	
@@ -34,7 +34,7 @@ void TrackList::clear()
 	trackReference = 0;
 }
 
-int TrackList::getTrackIndexByFile(const char * file) const
+int TrackList::getTrackIndexByFile(const string & file) const
 {
 	try
 	{

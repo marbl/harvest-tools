@@ -9,6 +9,18 @@
 
 using namespace::std;
 
+char complement(char base)
+{
+	switch ( base )
+	{
+		case 'A': return 'T'; break;
+		case 'C': return 'G'; break;
+		case 'G': return 'C'; break;
+		case 'T': return 'A'; break;
+		default: return base;
+	}
+}
+
 char * removePrefix(char * string, const char * substring)
 {
 	size_t len = strlen(substring);
@@ -20,6 +32,16 @@ char * removePrefix(char * string, const char * substring)
 	else
 	{
 		return 0;
+	}
+}
+
+void reverseComplement(string & sequence)
+{
+	string copy = sequence;
+	
+	for ( int i = 0; i < sequence.length(); i++ )
+	{
+		sequence[sequence.length() - i - 1] = complement(copy[i]);
 	}
 }
 

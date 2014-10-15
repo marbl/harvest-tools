@@ -20,6 +20,16 @@ class LcbList
 {
 public:
 	
+	struct Interval
+	{
+		int sequence;
+		int start;
+		int end;
+		
+		Interval(int sequenceNew, int startNew, int endNew)
+			: sequence(sequenceNew), start(startNew), end(endNew) {}
+	};
+	
 	struct Region
 	{
 		int position;
@@ -39,6 +49,7 @@ public:
 	void clear();
 	const Lcb & getLcb(int index) const;
 	int getLcbCount() const;
+	void initFromMaf(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList, const char * referenceFileName);
 	void initFromMfa(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList);
 	void initFromProtocolBuffer(const Harvest::Alignment & msgAlignment);
 	void initFromXmfa(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList);

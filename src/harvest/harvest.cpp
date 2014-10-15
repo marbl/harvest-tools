@@ -18,6 +18,7 @@ int main(int argc, const char * argv[])
 	vector<const char *> bed;
 	const char * fasta = 0;
 	vector<const char *> genbank;
+	const char * maf = 0;
 	const char * mfa = 0;
 	const char * newick = 0;
 	const char * vcf = 0;
@@ -47,6 +48,7 @@ int main(int argc, const char * argv[])
 						midpointReroot = true;
 					}
 					break;
+				case 'a': maf = argv[++i]; break;
 				case 'b': bed.push_back(argv[++i]); break;
 				case 'B': outBB = argv[++i]; break;
 				case 'f': fasta = argv[++i]; break;
@@ -81,6 +83,7 @@ int main(int argc, const char * argv[])
 		cout << "   -f <reference fasta>" << endl;
 		cout << "   -F <reference fasta out>" << endl;
 		cout << "   -g <reference genbank>" << endl;
+		cout << "   -a <MAF alignment input>" << endl;
 		cout << "   -m <multi-fasta alignment input>" << endl;
 		cout << "   -n <Newick tree input>" << endl;
 		cout << "   -N <Newick tree output>" << endl;
@@ -107,13 +110,27 @@ int main(int argc, const char * argv[])
 	if ( mfa )
 	{
 		if ( ! quiet ) cerr << "Loading " << mfa << "..." << endl;
-		hio.loadMFA(mfa, vcf == 0);
+		hio.loadMfa(mfa, vcf == 0);
 	}
 	
 	if ( fasta )
 	{
 		if ( ! quiet ) cerr << "Loading " << fasta << "..." << endl;
 		hio.loadFasta(fasta);
+	}
+	
+	if ( maf )
+	{
+		try
+		{
+			if ( ! quiet ) cerr << "Loading " << maf << "..." << endl;
+			hio.loadMaf(maf, vcf == 0, fasta);
+		}
+		catch ( const ReferenceList::NameNotFoundException & e )
+		{
+			cerr << "   ERROR: Sequence \"" << e.name << "\" not found in reference." << endl;
+			return 1;
+		}
 	}
 	
 	bool useSeq = hio.referenceList.getReferenceCount() == 0;
@@ -128,7 +145,7 @@ int main(int argc, const char * argv[])
 	}
 	catch ( const AnnotationList::NoSequenceException & e )
 	{
-		cerr << "ERROR: No sequence in Genbank file (" << e.file << ") and no other reference loaded.\n";
+		cerr << "   ERROR: No sequence in Genbank file (" << e.file << ") and no other reference loaded.\n";
 		return 1;
 	}
 	

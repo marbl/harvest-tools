@@ -30,7 +30,8 @@ public:
 	void loadFasta(const char * file);
 	void loadGenbank(const char * file, bool useSeq);
 	bool loadHarvest(const char * file);
-	void loadMFA(const char * file, bool findVariants);
+	void loadMaf(const char * file, bool findVariants, const char * referenceFileName);
+	void loadMfa(const char * file, bool findVariants);
 	void loadNewick(const char * file);
 	void loadVcf(const char * file);
 	void loadXmfa(const char * file, bool findVariants);

@@ -102,7 +102,12 @@ bool HarvestIO::loadHarvest(const char * file)
 	return true;
 }
 
-void HarvestIO::loadMFA(const char * file, bool findVariants)
+void HarvestIO::loadMaf(const char * file, bool findVariants, const char * referenceFileName)
+{
+	lcbList.initFromMaf(file, &referenceList, &trackList, &phylogenyTree, findVariants ? &variantList : 0, referenceFileName);
+}
+
+void HarvestIO::loadMfa(const char * file, bool findVariants)
 {
 	lcbList.initFromMfa(file, &referenceList, &trackList, &phylogenyTree, findVariants ? &variantList : 0);
 }

@@ -57,11 +57,11 @@ public:
 	
 	TrackList();
 	
-	int addTrack(const char * file, int size = 0, const char * name = "", TrackType type = NONE);
+	int addTrack(const std::string & file, int size = 0, const std::string & name = "", TrackType type = NONE);
 	void clear();
 	const Track & getTrack(int index) const;
 	int getTrackCount() const;
-	int getTrackIndexByFile(const char * file) const;
+	int getTrackIndexByFile(const std::string & file) const;
 	Track & getTrackMutable(int index);
 	int getTrackReference() const;
 	void initFromProtocolBuffer(const Harvest::TrackList & msg);

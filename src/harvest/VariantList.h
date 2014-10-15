@@ -38,7 +38,7 @@ public:
 	};
 	
 	void addFilterFromBed(const char * file, const char * name, const char * desc);
-	void addVariantsFromAlignment(const std::vector<std::string> & seqs, const ReferenceList & referenceList, int sequence, int position, bool lcbfilt);
+	void addVariantsFromAlignment(const std::vector<std::string> & seqs, const ReferenceList & referenceList, int sequence, int position, int length, bool reverse = false);
 	void clear();
 	const Filter & getFilter(int index) const;
 	int getFilterCount() const;

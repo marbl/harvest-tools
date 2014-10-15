@@ -69,6 +69,21 @@ int ReferenceList::getReferenceSequenceFromGi(long int gi) const
 	return undef;
 }
 
+int ReferenceList::getReferenceSequenceFromName(string name) const
+{
+	for ( int i = 0; i < references.size(); i++ )
+	{
+		if ( name == references.at(i).name )
+		{
+			return i;
+		}
+	}
+	
+	throw NameNotFoundException(name);
+	
+	return undef;
+}
+
 void ReferenceList::initFromFasta(const char * file)
 {
 	ifstream in(file);

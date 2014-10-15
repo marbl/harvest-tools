@@ -6,6 +6,7 @@
 
 #include "harvest/VariantList.h"
 #include <fstream>
+#include "harvest/parse.h"
 
 using namespace::std;
 
@@ -63,7 +64,7 @@ void VariantList::addFilterFromBed(const char * file, const char * name, const c
 	}
 }
 
-void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const ReferenceList & referenceList, int sequence, int position, bool lcbfilt)
+void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const ReferenceList & referenceList, int sequence, int position, int length, bool reverse)
 {
 //	Harvest::Variation * msg = harvest.mutable_variation();
 	char col[seqs.size() + 1];
@@ -73,7 +74,7 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 	vector<bool> nns(seqs[0].length()+1,false);
 	int offset = 0;
 	
-	col[seqs.size()] = 0;
+	col[seqs.size()] = 0; // null-terminate for use as a c-style string
 	
         //simple loop to check for column conservation
         //this could be done via SP-score all-v-all pairs
@@ -81,14 +82,21 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
         //with less than 50% column conservation (w.r.t ref, not consensus)
 	for ( int i = 0; i < seqs[0].length(); i++ )
 	{
-		col[0] = seqs[0][i];
-                bool variant = false;
-                bool indel = false;
-                vector<int> nt_cnt(5,0);
-                vector<int>::iterator maxval;
+		bool variant = false;
+		bool indel = false;
+		vector<int> nt_cnt(5,0);
+		//vector<int>::iterator maxval;
+		
 		for (int j = 0; j < seqs.size(); j++)
 		{
-                    col[j] = seqs[j][i];
+			if ( reverse )
+			{
+				col[j] = seqs[j][seqs[0].length() - i - 1];
+			}
+			else
+			{
+				col[j] = seqs[j][i];
+			}
 
   		    if (col[j] == 'a' || col[j] == 'A')
 		      nt_cnt[0] =1;
@@ -106,7 +114,7 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
                       nt_cnt[4] = 1;
 		    }
                 }
-                maxval = std::max_element(nt_cnt.begin(),nt_cnt.end());
+                //maxval = std::max_element(nt_cnt.begin(),nt_cnt.end());
                 if ((nt_cnt[0] + nt_cnt[1] + nt_cnt[2] + nt_cnt[3] +nt_cnt[4]) > 1)
                   conserved[i] = false;
                 /*multi-allelic
@@ -127,8 +135,15 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 	{
 		bool variant = false;
 		bool n = false;
-
-		col[0] = seqs[0][i];
+		
+		if ( reverse )
+		{
+			col[0] = seqs[0][seqs[0].length() - i - 1];
+		}
+		else
+		{
+			col[0] = seqs[0][i];
+		}
 		
 		bool indel = col[0] == '-';
 		
@@ -145,8 +160,15 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 		
 		for ( int j = 1; j < seqs.size(); j++ )
 		{
-			col[j] = seqs[j][i];
-			
+			if ( reverse )
+			{
+				col[j] = seqs[j][seqs[0].length() - i - 1];
+			}
+			else
+			{
+				col[j] = seqs[j][i];
+			}
+		
 			if ( ! variant && col[j] != col[0] )
 			{
 				variant = true;
@@ -214,6 +236,14 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 			  }
 			}
 			
+			if ( reverse )
+			{
+				for ( int j = 0; j < seqs.size(); j++ )
+				{
+					col[j] = complement(col[j]);
+				}
+			}
+			
 			varNew->sequence = sequence;
 			varNew->position = position;
 			varNew->offset = offset;
@@ -230,7 +260,7 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 				varNew->filters |= FILTER_n;
 			}
 			
-			if (lcbfilt)
+			if ( length < 200 )
 			{
 				varNew->filters |= FILTER_lcb;
 			}

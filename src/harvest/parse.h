@@ -9,7 +9,9 @@
 
 #include <string>
 
+char complement(char base);
 char * removePrefix(char * string, const char * substring);
+void reverseComplement(std::string & sequence);
 void ungap(std::string & gapped);
 
 #endif

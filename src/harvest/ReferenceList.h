@@ -41,6 +41,20 @@ public:
 		std::string gi;
 	};
 	
+	class NameNotFoundException : public std::exception
+	{
+	public:
+		
+		NameNotFoundException(const std::string & nameNew)
+		{
+			name = nameNew;
+		}
+		
+		virtual ~NameNotFoundException() throw() {}
+		
+		std::string name;
+	};
+	
 	void addReference(std::string name, std::string desc, std::string sequence);
 	void clear();
 	int getPositionFromConcatenated(int sequence, long int position) const;
@@ -48,6 +62,7 @@ public:
 	int getReferenceCount() const;
 	int getReferenceSequenceFromConcatenated(long int position) const;
 	int getReferenceSequenceFromGi(long int gi) const;
+	int getReferenceSequenceFromName(std::string name) const;
 	void initFromFasta(const char * file);
 	void initFromProtocolBuffer(const Harvest::Reference & msg);
 	void writeToFasta(std::ostream & out) const;

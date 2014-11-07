@@ -476,6 +476,11 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 		}
 	}
 	
+	if ( queryCount && lcbs.size() == 0 )
+	{
+		throw NoCoreException(queryCount);
+	}
+	
 	if ( oldTags )
 	{
 		trackList->setTracksByFile();

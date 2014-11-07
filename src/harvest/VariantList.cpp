@@ -542,9 +542,10 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 			
 			for ( int i = 0; i < alleleStrings.size(); i++ )
 			{
-				if ( alleleStrings[i].find_first_of("<>[]*") != string::npos )
+				if ( alleleStrings[i].find_first_of("<>[]*X") != string::npos )
 				{
-					// we don't handle symbolic alleles or breakends yet
+					// we don't yet handle symbolic alleles, breakends, or other
+					// weird stuff
 					
 					continue;
 				}

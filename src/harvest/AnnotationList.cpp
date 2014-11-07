@@ -73,19 +73,17 @@ void AnnotationList::initFromGenbank(const char * file, ReferenceList & referenc
 				{
 					long int gi = atol(giToken + 4);
 					int sequence = referenceList.getReferenceSequenceFromGi(gi);
-			
-					if ( sequence == undef )
-					{
-						printf("Couldn't find GI %ld in reference.\n", gi);
-						return;
-					}
-				
+					
 					offset = 0;
 				
 					for ( int i = 0; i < sequence; i++ )
 					{
 						offset += referenceList.getReference(i).sequence.length();
 					}
+				}
+				else
+				{
+					throw NoGiException(file);
 				}
 			}
 			else if ( removePrefix(line, "FEATURES") )

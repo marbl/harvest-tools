@@ -43,6 +43,20 @@ public:
 		std::string file;
 	};
 	
+	class NoGiException : public std::exception
+	{
+	public:
+		
+		NoGiException(const std::string & fileNew)
+		{
+			file = fileNew;
+		}
+		
+		virtual ~NoGiException() throw() {}
+		
+		std::string file;
+	};
+	
 	void clear();
 	int getAnnotationCount() const;
 	const Annotation & getAnnotation(int index) const;

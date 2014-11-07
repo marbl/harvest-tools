@@ -131,6 +131,10 @@ int main(int argc, const char * argv[])
 			cerr << "   ERROR: Sequence \"" << e.name << "\" not found in reference." << endl;
 			return 1;
 		}
+		catch (const LcbList::NoCoreException & e )
+		{
+			cerr << "   ERROR: No alignment involving all " << e.queryCount << " sequences found in " << maf << '.' << endl;
+		}
 	}
 	
 	bool useSeq = hio.referenceList.getReferenceCount() == 0;
@@ -146,6 +150,11 @@ int main(int argc, const char * argv[])
 	catch ( const AnnotationList::NoSequenceException & e )
 	{
 		cerr << "   ERROR: No sequence in Genbank file (" << e.file << ") and no other reference loaded.\n";
+		return 1;
+	}
+	catch ( const AnnotationList::NoGiException & e )
+	{
+		cerr << "   ERROR: Genbank file (" << e.file << ") does not contain GI; cannot be matched to existing reference.\n";
 		return 1;
 	}
 	

@@ -11,6 +11,7 @@
 #include "harvest/ReferenceList.h"
 #include "harvest/PhylogenyTree.h"
 #include "harvest/TrackList.h"
+#include <stdexcept>
 
 #include "harvest/pb/harvest.pb.h"
 
@@ -19,6 +20,20 @@ class VariantList;
 class LcbList
 {
 public:
+	
+	class NoCoreException : public std::exception
+	{
+	public:
+		
+		NoCoreException(int queryCountNew)
+		{
+			queryCount = queryCountNew;
+		}
+		
+		virtual ~NoCoreException() throw() {}
+		
+		int queryCount;
+	};
 	
 	struct Interval
 	{

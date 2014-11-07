@@ -163,6 +163,7 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 	int queryCount = 0;
 	int lcbQueryCount = 0;
 	vector<int> queryCountsByLcb;
+	set<string> seqNames;
 	
 	// scan through once to determine number of query sequences...
 	
@@ -176,20 +177,24 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 	{
 		if ( line[0] == 's' )
 		{
+			stringstream lineStream(line);
+			
+			lineStream.ignore(2);
+			
+			string trackName;
+			getline(lineStream, trackName, '.');
+			seqNames.insert(trackName);
+			
 			lcbQueryCount++;
 		}
 		else if ( line[0] == 0 )
 		{
-			if ( lcbQueryCount > queryCount )
-			{
-				queryCount = lcbQueryCount;
-			}
-			
 			queryCountsByLcb.push_back(lcbQueryCount);
 			lcbQueryCount = 0;
 		}
 	}
 	
+	queryCount = seqNames.size();
 	regionOffsetBySeqNameByTrack.resize(queryCount);
 	totalOffsetByTrack.resize(queryCount, 0);
 	
@@ -208,7 +213,6 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 			if ( queryCountsByLcb[lcbIndex] == queryCount )
 			{
 				// core; create a new Lcb
-				cerr << "creating lcb...\n";
 				
 				if ( variantList && lcbs.size() == 0 )
 				{
@@ -245,8 +249,6 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 			
 			// create track if name is new
 			
-			cerr << trackName << '\t';
-			
 			try
 			{
 				trackIndex = trackList->getTrackIndexByFile(trackName);
@@ -261,12 +263,9 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 				}
 				else
 				{
-					cerr << "(adding)" << '\t';
 					trackIndex = trackList->addTrack(trackName);
 				}
 			}
-			
-			cerr << trackIndex << '\t';
 			
 			if ( oldTags && trackCount < trackList->getTrackCount() )
 			{
@@ -326,7 +325,6 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 			{
 				// new sequence for this track; it's offset is the current total
 				
-				cerr << "adding " << seqName << " to " << trackIndex << " at " << totalOffsetByTrack[trackIndex] << " (" << seqLength << ")" << endl;
 				regionOffsetBySeqNameByTrack[trackIndex][seqName] = totalOffsetByTrack[trackIndex];
 				totalOffsetByTrack[trackIndex] += seqLength;
 			}
@@ -350,7 +348,7 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 					if ( createReference )
 					{
 						// create ref and cache its index
-						cerr << "creating " << seqName << '\t';
+						
 						refIndex = refs.size();
 						refs.resize(refs.size() + 1);
 						refNames.resize(refNames.size() + 1);
@@ -378,7 +376,6 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 						refIndexByName[seqName] = refIndex;
 					}
 				}
-				cerr << "seq: " << seqName << " index: " << refIndex << '\t';
 				
 				set<Interval>::iterator lowerBound = lcbIntervals.lower_bound(Interval(refIndex, position, position + length - 1));
 				bool overlap = false;
@@ -387,8 +384,6 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 				{
 					if ( refIndex == lowerBound->sequence && position + length - 1 >= lowerBound->start )
 					{
-						cerr << "OVERLAPR " << lowerBound->sequence << '\t' << lowerBound->start << '\t' << lowerBound->end << endl;
-						cerr << "NEW      " << refIndex << '\t' << position << '\t' << position + length - 1 << endl;
 						overlap = true;
 					}
 					
@@ -398,8 +393,6 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 					{
 						if ( refIndex == lowerBound->sequence && position <= lowerBound->end )
 						{
-							cerr << "OVERLAPL " << lowerBound->sequence << '\t' << lowerBound->start << '\t' << lowerBound->end << endl;
-							cerr << "NEW      " << refIndex << '\t' << position << '\t' << position + length - 1 << endl;
 							overlap = true;
 						}
 					}
@@ -434,8 +427,6 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 			region->length = length;
 			region->reverse = reverse;
 			
-//			cout << "pos " << region->position << " length " << region->length << endl;
-			
 			// parse sequence
 			
 			if ( trackIndex == 0 || variantList )
@@ -460,7 +451,6 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 				
 				if ( variantList )
 				{
-					cerr << "trackIndex: " << trackIndex << " seqs: " << seqs.size() << endl;
 					seqs[trackIndex] = seq;
 				}
 			}
@@ -475,7 +465,6 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 				}
 			}
 			
-			cout << "lcb seq: " << lcb->sequence << " pos: " << lcb->position << endl;
 			variantList->addVariantsFromAlignment(seqs, *referenceList, lcb->sequence, lcb->position, lcb->length, lcbReverse);
 			
 			for ( int i = 0; i < seqs.size(); i++ )

@@ -17,6 +17,16 @@ void ReferenceList::addReference(string name, string desc, string sequence)
 	references[references.size() - 1].sequence = sequence;
 }
 
+long int ReferenceList::getConcatenatedPosition(int sequence, long int position) const
+{
+	for ( int i = 0; i < sequence; i++ )
+	{
+		position += references.at(i).sequence.length();
+	}
+	
+	return position;
+}
+
 int ReferenceList::getPositionFromConcatenated(int sequence, long int position) const
 {
 	long int sum = 0;

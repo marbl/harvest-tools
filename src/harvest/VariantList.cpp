@@ -6,9 +6,31 @@
 
 #include "harvest/VariantList.h"
 #include <fstream>
+#include <sstream>
 #include "harvest/parse.h"
+#include <tuple>
+#include <set>
 
 using namespace::std;
+
+bool operator<(const VariantList::VariantSortKey & a, const VariantList::VariantSortKey & b)
+{
+	if ( a.sequence == b.sequence )
+	{
+		if ( a.position == b.position )
+		{
+			return a.offset < b.offset;
+		}
+		else
+		{
+			return a.position < b.position;
+		}
+	}
+	else
+	{
+		return a.sequence < b.sequence;
+	}
+}
 
 void VariantList::addFilterFromBed(const char * file, const char * name, const char * desc)
 {
@@ -247,6 +269,16 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 			varNew->sequence = sequence;
 			varNew->position = position;
 			varNew->offset = offset;
+			
+			if ( referenceList.getReferenceCount() )
+			{
+				varNew->reference = referenceList.getReference(sequence).sequence[position];
+			}
+			else
+			{
+				varNew->reference = col[0];
+			}
+			
 			varNew->alleles = col;
 			varNew->filters = 0;
 			
@@ -322,6 +354,15 @@ void VariantList::initFromProtocolBuffer(const Harvest::Variation & msgVariation
 		variant.alleles = msgVariant.alleles();
 		variant.filters = msgVariant.filters();
 		variant.quality = msgVariant.quality();
+		
+		if ( msgVariant.has_reference() )
+		{
+			variant.reference = msgVariant.reference();
+		}
+		else
+		{
+			variant.reference = variant.alleles[0];
+		}
 	}
 }
 
@@ -332,13 +373,29 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 	
 	ifstream in(file);
 	
-	char line[1 << 20];
+	// Since we will be transposing multi-base alleles to our column-based
+	// representation, we will refer to columns multiple times and will use a
+	// map to look up existing columns efficiently.
+	//
+	map<VariantSortKey, int> variantIndecesBySortKey;
+	
+	// Insertions where any allele inserted more than one base are ambiguous and
+	// will be replaced with an LCB boundary; also, insertions or deletions with
+	// missing ('.') alleles are considered non-core and removed. This map keeps
+	// track of such cases for reference during transposition and for creating
+	// LCBs later. For these keys, offset is 0 for deletions and 1 for
+	// insertions; this determines whether the base itself is included in an LCB
+	//
+	set<VariantSortKey> ambiguousIndels;
+	
+	string line;
 	map<string, long long int> flagsByFilter;
 	map<string, int> refByTag;
-	unsigned int alleleCount = 0;
+	//unsigned int alleleCount = 0;
 	
 	bool oldTags = trackList->getTrackCount();
 	int * trackIndecesNew;
+	int lineIndex = 1;
 	
 	if ( oldTags )
 	{
@@ -350,32 +407,33 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 		refByTag[referenceList.getReference(i).name] = i;
 	}
 	
-	while ( ! in.eof() )
+	while ( getline(in, line) )
 	{
-		if ( in.peek() == '#' )
+		if ( line[0] == '#' )
 		{
-			in.getline(line, (1 << 20) - 1);
-			
-			if ( strncmp(line, "##FILTER", 8) == 0 )
+			if ( strncmp(line.c_str(), "##FILTER", 8) == 0 )
 			{
 				char * token;
 				
 				filters.resize(filters.size() + 1);
 				Filter & filter = filters[filters.size() - 1];
 				
-				token = strtok(line, "<");
+				size_t pos = line.find("ID=", 10);
 				
-				while ( (token = strtok(0, ",>\"")) )
+				if ( pos != string::npos )
 				{
-					if ( strncmp(token, "ID=", 3) == 0 )
-					{
-						filter.name = token + 3;
-					}
-					else if ( strcmp(token, "Description=") == 0 )
-					{
-						filter.description = strtok(0, "\"");
-						strtok(0, ">"); // eat
-					}
+					pos += 3;
+					size_t end = line.find_first_of(",>", pos);
+					filter.name = line.substr(pos, end - pos);
+				}
+				
+				pos = line.find("Description=", 10);
+				
+				if ( pos != string::npos )
+				{
+					pos += 13;
+					size_t end = line.find_first_of("\"", pos);
+					filter.description = line.substr(pos, end - pos);
 				}
 				
 				uint64 flag = 1 << flagsByFilter.size();
@@ -383,20 +441,23 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 				filter.flag = flag;
 				//printf("FILTER:\t%d\t%s\t%s\n", filter->flag(), filter->name().c_str(), filter->description().c_str());
 			}
-			else if ( strncmp(line, "#CHROM", 6) == 0 )
+			else if ( strncmp(line.c_str(), "#CHROM", 6) == 0 )
 			{
 				TrackList::Track * track;
-				char * token;
 				int n = 0;
+				stringstream lineStream(line);
+				string field;
 				
-				strtok(line, "\t");
-				
-				for ( int i = 0; i < 8; i++ )
+				// eat headers
+				//
+				for ( int i = 0; i < 9; i++ )
 				{
-					strtok(0, "\t"); // eat headers
+					lineStream >> field;
 				}
 				
-				while ( (token = strtok(0, "\t")) )
+				// get names
+				//
+				while ( (lineStream >> field) )
 				{
 					if ( oldTags )
 					{
@@ -404,7 +465,7 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 						
 						try
 						{
-							trackIndecesNew[trackList->getTrackIndexByFile(token)] = n;
+							trackIndecesNew[trackList->getTrackIndexByFile(field)] = n;
 						}
 						catch ( const TrackList::TrackNotFoundException & e )
 						{
@@ -417,95 +478,277 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 					}
 					else
 					{
-						track = &trackList->getTrackMutable(trackList->addTrack(token));
+						track = &trackList->getTrackMutable(trackList->addTrack(field));
 					}
 			
-					track->file = token;
+					track->file = field;
 				}
 			}
 		}
 		else
 		{
-			in.getline(line, (1 << 20) - 1);
+			stringstream lineStream(line);
 			
-			if ( in.eof() )
+			string refName;
+			int position;
+			string eaten;
+			string ref;
+			string altAlleles;
+			float quality;
+			string info;
+			string filterString;
+			int offset = 0;
+			
+			lineStream >> refName >> position >> eaten >> ref >> altAlleles >> quality >> filterString >> eaten >> eaten;
+			int sequence = refByTag[refName];
+			position--;
+			
+			vector<string> alleleStrings;
+			string alleleString;
+			stringstream alleleStream(altAlleles);
+			
+			while ( getline(alleleStream, alleleString, ',') )
 			{
-				break;
+				alleleStrings.push_back(alleleString);
 			}
-			
-			variants.resize(variants.size() + 1);
-			Variant & variant = variants[variants.size() - 1];
-			
-			variant.sequence = refByTag[strtok(line, "\t")];
-			variant.position = atoi(strtok(0, "\t")) - 1;
-			strtok(0, "\t"); // eat id
-			char * alleles = strtok(0, "\t"); // ref allele
-			strtok(0, "\t"); // eat alt alleles
-			variant.quality = atoi(strtok(0, "\t"));
 			
 			uint64 filters = 0;
-			char * filterString = strtok(0, "\t");
+			stringstream filterStream(filterString);
 			
-			if ( filterString[-1] == '\t' )
+			while ( getline(filterStream, filterString, ':') )
 			{
-				filterString--;
-				*filterString = 0;
-			}
-			else
-			{
-				strtok(0, "\t"); // eat info
-			}
-			char * del = filterString;
-			
-			while ( del )
-			{
-				del = strchr(filterString, ':');
-				
-				if ( del )
-				{
-					*del = 0;
-				}
-				
-				if ( *filterString )
+				if ( filterString.compare(".") != 0 && filterString.compare("PASS") != 0 )
 				{
 					filters |= flagsByFilter[filterString];
 				}
-				
-				filterString = del + 1;
 			}
 			
-			variant.filters = filters;
+			string alleleIndex;
+			vector<int> alleleIndeces;
+			bool missing = false;
 			
-			strtok(0, "\t"); // eat format
-			
-			char * alleleString;
-			variant.alleles.resize(alleleCount);
-			alleleCount = 0;
-			
-			while ( (alleleString = strtok(0, "\t")) )
+			while ( lineStream >> alleleIndex )
 			{
-				if ( variant.alleles.size() < alleleCount + 1 )
+				if ( alleleIndex[0] == '.' )
 				{
-					variant.alleles.resize(alleleCount + 1);
-				}
-				
-				if ( *alleleString == '.' )
-				{
-					variant.alleles[alleleCount] = 'N';
+					missing = true;
+					alleleIndeces.push_back(-1);
 				}
 				else
 				{
-					variant.alleles[alleleCount] = alleles[atoi(alleleString) * 2];
+					alleleIndeces.push_back(atoi(alleleIndex.c_str()));
 				}
-				
-				alleleCount++;
 			}
 			
-//			(*variant->mutable_alleles())[alleleCount] = '\0';
-			
-//			printf("VARIANT:\t%d\t%d\t%d\t%d\t%s\n", variant.sequence, variant.position, variant.filters, variant.quality, variant.alleles.c_str());
+			for ( int i = 0; i < alleleStrings.size(); i++ )
+			{
+				if ( alleleStrings[i].find_first_of("<>[]*") != string::npos )
+				{
+					// we don't handle symbolic alleles or breakends yet
+					
+					continue;
+				}
+				
+				if ( alleleStrings[i].length() != ref.length() )
+				{
+					if ( alleleStrings[i][0] != ref[0] )
+					{
+						throw CompoundVariantException(lineIndex);
+					}
+				}
+				
+				int lengthVariant;
+				
+				if ( alleleStrings[i].length() > ref.length() )
+				{
+					lengthVariant = alleleStrings[i].length();
+				}
+				else
+				{
+					lengthVariant = ref.length();
+				}
+				
+				for ( int j = 0; j < lengthVariant; j++ )
+				{
+					if ( j < ref.length() && j < alleleStrings[i].length() && alleleStrings[i].at(j) == ref.at(j) )
+					{
+						continue;
+					}
+					
+					int positionVariant;
+					int offset;
+					
+					if ( j >= ref.length() )
+					{
+						positionVariant = position + ref.length() - 1;
+						offset = j - ref.length() + 1;
+					}
+					else
+					{
+						positionVariant = position + j;
+						offset = 0;
+					}
+					
+					if ( offset > 0 )
+					{
+						if ( ambiguousIndels.count(VariantSortKey(sequence, position + ref.length() - 1, 1)) )
+						{
+							// another variant tried to insert more than one
+							// base here; this is now ambiguous
+							
+							break;
+						}
+					}
+					
+					if ( offset > 1 || ( offset == 1 && missing) )
+					{
+						// insertions of more than one base become ambiguous;
+						// replace with LCB boundary, destroy any single base
+						// insertions at this spot, and prevent more
+						
+						VariantSortKey key(sequence, position + ref.length() - 1, 1);
+						
+						if ( variantIndecesBySortKey.count(key) )
+						{
+							variants.erase(variants.begin() + variantIndecesBySortKey.at(key));
+						}
+						
+						ambiguousIndels.insert(key);
+						
+						break;
+					}
+					
+					VariantSortKey key(sequence, positionVariant, offset);
+					Variant * variant;
+					
+					if ( ambiguousIndels.count(key) )
+					{
+						// ambiguous deletion here; no variants allowed
+						
+						continue;
+					}
+					
+					if ( missing && j >= alleleStrings[i].length() )
+					{
+						// ambiguous deletion; destroy any variants at this base
+						// (including insertions) and prevent more
+						
+						if ( variantIndecesBySortKey.count(key) )
+						{
+							variants.erase(variants.begin() + variantIndecesBySortKey.at(key));
+						}
+						
+						ambiguousIndels.insert(key);
+						
+						VariantSortKey keyInsertion(sequence, positionVariant, 1);
+						
+						if ( variantIndecesBySortKey.count(keyInsertion) )
+						{
+							variants.erase(variants.begin() + variantIndecesBySortKey.at(keyInsertion));
+						}
+						
+						ambiguousIndels.insert(keyInsertion);
+						
+						continue;
+					}
+					
+					if ( variantIndecesBySortKey.count(key) )
+					{
+						// existing variant at this column
+						
+						variant = & variants[variantIndecesBySortKey.at(key)];
+						
+						// use the minimum quality to be conservative
+						//
+						if ( quality < variant->quality )
+						{
+							variant->quality = quality;
+						}
+						
+						// use the union of the filters
+						//
+						variant->filters |= filters;
+					}
+					else
+					{
+						variantIndecesBySortKey[key] = variants.size();
+						variants.resize(variants.size() + 1);
+						variant = & variants[variants.size() - 1];
+						
+						if ( offset )
+						{
+							variant->reference = '-';
+						}
+						else
+						{
+							variant->reference = ref.at(j);
+						}
+						
+						variant->sequence = sequence;
+						variant->position = positionVariant;
+						variant->offset = offset;
+						variant->quality = quality;
+						variant->filters = filters;
+						variant->alleles.resize(trackList->getTrackCount(), 0);
+					}
+					
+					char snp;
+					
+					if ( j < alleleStrings[i].length() )
+					{
+						snp = alleleStrings[i].at(j);
+					}
+					else
+					{
+						snp = '-';
+					}
+					
+					for ( int k = 0; k < alleleIndeces.size(); k++ )
+					{
+						if ( alleleIndeces[k] - 1 == i || alleleIndeces[k] == -1 )
+						{
+							// we only set alternate bases, since reference alleles
+							// might not reflect other variants
+							
+							char snpAllele = alleleIndeces[k] == -1 ? 'N' : snp;
+							
+							if ( variant->alleles[k] != 0 && variant->alleles[k] != snpAllele)
+							{
+								throw ConflictingVariantException
+								(
+									lineIndex,
+									trackList->getTrack(k).file,
+									variant->alleles[k],
+									snpAllele
+								);
+							}
+							
+							variant->alleles[k] = snpAllele;
+						}
+					}
+				}
+			}
+		}
+		
+		lineIndex++;
+	}
+	
+	// since indel and snp changes can be cumulative in VCF, we only set
+	// alternate alleles above and will now fill in any missing values with
+	// their reference bases
+	//
+	for ( int i = 0; i < variants.size(); i++ )
+	{
+		for ( int j = 0; j < trackList->getTrackCount(); j++ )
+		{
+			if ( variants.at(i).alleles.at(j) == 0 )
+			{
+				variants[i].alleles[j] = variants.at(i).reference;
+			}
 		}
 	}
+	
+	sortVariants();
 	
 	if ( oldTags )
 	{
@@ -516,7 +759,79 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 	
 	if ( lcbList->getLcbCount() == 0 )
 	{
-		lcbList->initWithSingleLcb(referenceList, *trackList);
+		// use ambiguous indels as breakpoints for LCBs
+		
+		VariantSortKey keyLast(0, 0, 0);
+		set<VariantSortKey>::iterator key = ambiguousIndels.begin();
+		
+		while ( true )
+		{
+			int endSeq;
+			int endPos;
+			
+			if ( key == ambiguousIndels.end() )
+			{
+				endSeq = referenceList.getReferenceCount() - 1;
+				endPos = referenceList.getReference(endSeq).sequence.length() - 1;
+			}
+			else
+			{
+				endSeq = key->sequence;
+				
+				if ( key->offset == 0 )
+				{
+					endPos = key->position - 1;
+				}
+				else
+				{
+					endPos = key->position;
+				}
+			}
+			
+			cerr << "LCB: " << keyLast.position << '-' << endPos << endl;
+			lcbList->addLcbByReference(keyLast.sequence, keyLast.position, endSeq, endPos, referenceList, *trackList);
+			
+			if ( key == ambiguousIndels.end() )
+			{
+				break;
+			}
+			
+			// increment, skipping runs of adjacent deletions
+			//
+			do
+			{
+				keyLast.sequence = key->sequence;
+				keyLast.position = key->position + 1; // next lcb should start at next base
+				keyLast.offset = key->offset;
+				
+				if
+				(
+					keyLast.position == referenceList.getReference(key->sequence).sequence.length() &&
+					key->sequence < referenceList.getReferenceCount() - 1
+				)
+				{
+					// roll over to next sequence TODO: error?
+					
+					keyLast.sequence++;
+					keyLast.position = 0;
+				}
+				
+					
+				key++;
+				cerr << "keyLast: " << keyLast.position
+					<< ',' << keyLast.offset << "\tkey: " << key->position << ',' << key->offset << endl;
+			}
+			while
+			(
+				key != ambiguousIndels.end() &&
+				key->sequence == keyLast.sequence && 
+				key->position <= keyLast.position &&
+				
+				// allow 1-base LCB for consecutive ambiguous insertions
+				//
+				(key->offset == 0 || keyLast.offset == 0)
+			);
+		}
 	}
 	
 	in.close();
@@ -579,6 +894,7 @@ void VariantList::writeToProtocolBuffer(Harvest * msg) const
 		Harvest::Variation::Variant * variant = msgVar->add_variants();
 		
 		variant->set_sequence(variants[i].sequence);
+		variant->set_reference(variants[i].reference);
 		variant->set_position(variants[i].position);
 		variant->set_alleles(variants[i].alleles);
 		variant->set_filters(variants[i].filters);
@@ -646,12 +962,13 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 		if (pos+rend >= refseq.size())
 			rend = 0;
 			
-		out << variant.sequence + 1 << "\t" << pos + 1 << "\t" << refseq.substr(lend,ws) << "." << refseq.substr(pos,rend);
+		out << referenceList.getReference(variant.sequence).name << "\t" << pos + 1 << "\t" << refseq.substr(lend,ws) << "." << refseq.substr(pos,rend);
 
 		//build non-redundant allele list from cur alleles
 		vector<char> allele_list;
 		//first allele is ref allele (0)
-		allele_list.push_back(variant.alleles[0]);
+		out << "\t" << variant.reference << "\t";
+		allele_list.push_back(variant.reference);
 		bool prev_var = false;
 		for ( int i = 0; i < trackList.getTrackCount(); i++ )
 		{
@@ -669,16 +986,18 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 				allele_list.push_back(variant.alleles[i]);
 				prev_var = true;
 			}
-			//to see if we are in REF column
-			else if (i == 0)
-			{
-				out << "\t" << variant.alleles[i] << "\t";
-			}
 		}
 		
 		//below values, punt for now, fill in with actual values later..
 		//QUAL
-		out << "\t40";
+		if ( variant.quality != 0 )
+		{
+			out << '\t' << variant.quality; // currently only exists if imported from VCF
+		}
+		else
+		{
+			out << "\t40";
+		}
 
 		//FILT
 		//

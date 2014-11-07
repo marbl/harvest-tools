@@ -47,6 +47,32 @@ bool operator<(const LcbList::Interval & a, const LcbList::Interval & b)
 	}
 }
 
+void LcbList::addLcbByReference(int startSeq, int startPos, int endSeq, int endPos, const ReferenceList & referenceList, const TrackList & trackList)
+{
+	// add an LCB that has the same position in all queries as in the reference
+	
+	int startConcat = referenceList.getConcatenatedPosition(startSeq, startPos);
+	int endConcat = referenceList.getConcatenatedPosition(endSeq, endPos);
+	int length = endConcat - startConcat + 1;
+	
+	lcbs.resize(lcbs.size() + 1);
+	LcbList::Lcb * lcb = &lcbs[lcbs.size() - 1];
+	
+	lcb->sequence = startSeq;
+	lcb->position = startPos;
+	lcb->length = length;
+	lcb->regions.resize(trackList.getTrackCount());
+	
+	for ( int i = 0; i < trackList.getTrackCount(); i++ )
+	{
+		LcbList::Region * region = &lcb->regions[i];
+		
+		region->position = startConcat;
+		region->length = length;
+		region->reverse = false;
+	}
+}
+
 void LcbList::clear()
 {
 	lcbs.clear();
@@ -922,11 +948,11 @@ void LcbList::initWithSingleLcb(const ReferenceList & referenceList, const Track
 	lcbs.resize(1);
 	LcbList::Lcb * lcb = &lcbs[0];
 	lcb->position = 0;
+	lcb->regions.resize(trackList.getTrackCount());
 	
 	for ( int i = 0; i < trackList.getTrackCount(); i++ )
 	{
-		lcb->regions.resize(lcb->regions.size() + 1);
-		LcbList::Region * region = &lcb->regions[lcb->regions.size() - 1];
+		LcbList::Region * region = &lcb->regions[i];
 		
 		region->position = 0;
 		region->length = totalLength;

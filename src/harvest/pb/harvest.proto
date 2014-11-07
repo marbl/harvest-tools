@@ -93,6 +93,7 @@ message Harvest
 			optional string alleles = 3; // column of multialignment
 			optional uint64 filters = 4; // bit field of 'Filter.flag'
 			optional uint32 quality = 5;
+			optional uint32 reference = 6; // char; if ref is not in alignment (eg VCF)
 		}
 		
 		repeated Filter filters = 1;

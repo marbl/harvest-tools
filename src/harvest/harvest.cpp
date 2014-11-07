@@ -158,13 +158,36 @@ int main(int argc, const char * argv[])
 	if ( newick )
 	{
 		if ( ! quiet ) cerr << "Loading " << newick << "..." << endl;
-		hio.loadNewick(newick);
+		
+		try
+		{
+			hio.loadNewick(newick);
+		}
+		catch ( const TrackList::TrackNotFoundException & e )
+		{
+			cerr << "ERROR: No track named \"" << e.name << "\"" << endl;
+			return 1;
+		}
 	}
 	
 	if ( vcf )
 	{
 		if ( ! quiet ) cerr << "Loading " << vcf << "..." << endl;
-		hio.loadVcf(vcf);
+		
+		try
+		{
+			hio.loadVcf(vcf);
+		}
+		catch ( const VariantList::CompoundVariantException & e )
+		{
+			cerr << "ERROR: Indel allele does not contain flanking reference base (line " << e.line << " of " << vcf << ")\n";
+			return 1;
+		}
+		catch ( const VariantList::ConflictingVariantException & e )
+		{
+			cerr << "ERROR: Alternate allele \"" << e.snpNew << "\" conflicts with previous alternate allele \"" << e.snpOld << "\" for sample \"" << e.track << "\" (line " << e.line << " of " << vcf << ")\n";
+			return 1;
+		}
 	}
 	
 	for ( int i = 0; i < bed.size(); i++ )

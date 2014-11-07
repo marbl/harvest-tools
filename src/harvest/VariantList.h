@@ -32,9 +32,54 @@ public:
 		int sequence;
 		int position;
 		int offset;
+		char reference;
 		std::string alleles;
 		long long int filters;
 		int quality;
+	};
+	
+	struct VariantSortKey
+	{
+		int sequence;
+		int position;
+		int offset;
+		
+		VariantSortKey(int sequenceNew, int positionNew, int offsetNew)
+			: sequence(sequenceNew), position(positionNew), offset(offsetNew) {}
+	};
+	
+	class CompoundVariantException : public std::exception
+	{
+	public:
+		
+		CompoundVariantException(int lineNew)
+		{
+			line = lineNew;
+		}
+		
+		virtual ~CompoundVariantException() throw() {}
+		
+		int line;
+	};
+	
+	class ConflictingVariantException : public std::exception
+	{
+	public:
+		
+		ConflictingVariantException(int lineNew, std::string trackNew, char snpOldNew, char snpNewNew)
+		{
+			line = lineNew;
+			track = trackNew;
+			snpOld = snpOldNew;
+			snpNew = snpNewNew;
+		}
+		
+		virtual ~ConflictingVariantException() throw() {}
+		
+		int line;
+		std::string track;
+		char snpOld;
+		char snpNew;
 	};
 	
 	void addFilterFromBed(const char * file, const char * name, const char * desc);

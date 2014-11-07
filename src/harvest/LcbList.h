@@ -46,6 +46,7 @@ public:
 		float concordance;
 	};
 	
+	void addLcbByReference(int startSeq, int startPos, int endSeq, int endPos, const ReferenceList & referenceList, const TrackList & trackList);
 	void clear();
 	const Lcb & getLcb(int index) const;
 	int getLcbCount() const;

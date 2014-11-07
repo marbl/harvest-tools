@@ -57,6 +57,7 @@ public:
 	
 	void addReference(std::string name, std::string desc, std::string sequence);
 	void clear();
+	long int getConcatenatedPosition(int sequence, long int position) const;
 	int getPositionFromConcatenated(int sequence, long int position) const;
 	const Reference & getReference(int index) const;
 	int getReferenceCount() const;

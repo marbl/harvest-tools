@@ -61,19 +61,17 @@ void PhylogenyTree::initFromNewick(const char * file, TrackList * trackList)
 	
 	bool useNames = trackList->getTrackCount() == 0;
 	
-	while ( in.getline(line, (1 << 20) - 1) )
+	in.getline(line, (1 << 20) - 1, ';');
+	char * token = line;
+	
+	try
 	{
-		char * token = line;
-		
-		try
-		{
-			root = new PhylogenyTreeNode(token, trackList, useNames);
-		}
-		catch ( const TrackList::TrackNotFoundException & e )
-		{
-			root = 0;
-			throw;
-		}
+		root = new PhylogenyTreeNode(token, trackList, useNames);
+	}
+	catch ( const TrackList::TrackNotFoundException & e )
+	{
+		root = 0;
+		throw;
 	}
 	
 	in.close();
@@ -245,7 +243,7 @@ void PhylogenyTree::reroot(const PhylogenyTreeNode * rootNew, float distance, bo
 void PhylogenyTree::writeToNewick(std::ostream &out, const TrackList & trackList) const
 {
 	root->writeToNewick(out, trackList);
-	out << '\n';
+	out << ";\n";
 }
 
 void PhylogenyTree::writeToProtocolBuffer(Harvest * msg) const

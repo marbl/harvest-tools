@@ -40,6 +40,11 @@ PhylogenyTreeNode::PhylogenyTreeNode(char *& token, TrackList * trackList, bool 
 	
 	while ( state != STATE_end )
 	{
+		while ( *token == '\n' || *token == '\r' )
+		{
+			token++;
+		}
+		
 		if ( state == STATE_start )
 		{
 			if ( *token == '(' )
@@ -73,7 +78,7 @@ PhylogenyTreeNode::PhylogenyTreeNode(char *& token, TrackList * trackList, bool 
 		}
 		else if ( state == STATE_nameLeaf || state == STATE_nameInternal )
 		{
-			if ( *token == ';' )
+			if ( *token == 0 )
 			{
 				state = STATE_end;
 			}

@@ -97,30 +97,28 @@ int ReferenceList::getReferenceSequenceFromName(string name) const
 void ReferenceList::initFromFasta(const char * file)
 {
 	ifstream in(file);
-	char line[1 << 20];
+	string line;
 	Reference * reference;
 	
-	while ( ! in.eof() )
+	while ( getline(in, line) )
 	{
-		in.getline(line, (1 << 20) - 1);
-		
-		if ( *line == '>' )
+		if ( line[0] == '>' )
 		{
 			references.resize(references.size() + 1);
 			reference = &references.at(references.size() - 1);
 			
-			string tag = line + 1;
+			string tag = line.substr(1);
 			
 			reference->name = parseNameFromTag(tag);
 			reference->description = parseDescriptionFromTag(tag);
 		}
-		else if ( *line != '#' )
+		else if ( line[0] != '#' )
 		{
-			int length = strlen(line);
+			int length = line.length();
 			
 			if ( line[length - 1] == '\r' )
 			{
-				line[length - 1] = 0;
+				line.resize(length - 1);
 			}
 			
 			reference->sequence.append(line);
@@ -161,7 +159,7 @@ void ReferenceList::writeToFasta(ostream & out) const
 		
 		for ( int j = 0; j < sequence.length(); j++ )
 		{
-			if ( width == 80 )
+			if ( width == 70 )
 			{
 				out << endl;
 				width = 0;

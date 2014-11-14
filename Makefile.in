@@ -46,10 +46,12 @@ install : libharvest.a
 	mkdir -p @prefix@/include/harvest/pb
 	ln -sf `pwd`/harvest @prefix@/bin/
 	ln -sf `pwd`/libharvest.a @prefix@/lib/
+	ln -sf `pwd`/src/harvest/exceptions.h @prefix@/include/harvest/
 	ln -sf `pwd`/src/harvest/HarvestIO.h @prefix@/include/harvest/
 	ln -sf `pwd`/src/harvest/pb/harvest.pb.h @prefix@/include/harvest/pb/
 	ln -sf `pwd`/src/harvest/ReferenceList.h @prefix@/include/harvest/
 	ln -sf `pwd`/src/harvest/AnnotationList.h @prefix@/include/harvest/
+	ln -sf `pwd`/src/harvest/parse.h @prefix@/include/harvest/
 	ln -sf `pwd`/src/harvest/PhylogenyTree.h @prefix@/include/harvest/
 	ln -sf `pwd`/src/harvest/PhylogenyTreeNode.h @prefix@/include/harvest/
 	ln -sf `pwd`/src/harvest/TrackList.h @prefix@/include/harvest/

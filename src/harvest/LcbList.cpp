@@ -11,7 +11,7 @@
 #include "harvest/parse.h"
 #include <set>
 #include <stdlib.h>
-
+#include "harvest/exceptions.h"
 #include "harvest/VariantList.h"
 
 using namespace::std;
@@ -511,7 +511,7 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 	lcbs.resize(0);
 	
 	ifstream in(file);
-	char line[1 << 20];
+	string line;
 	vector<string> seqs;
 	const bool oldTags = phylogenyTree->getRoot();
 	string refTag;
@@ -527,31 +527,19 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 		trackList->clear();
 	}
 	
-	while ( ! in.eof() )
+	while ( getline(in, line) )
 	{
-		if ( in.peek() == '#' )
-		{
-			continue;
-		}
-		
 		if ( in.peek() == '>' )
 		{
-			in.getline(line, (1 << 20) - 1);
-			string tag(strtok(line + 1, " \n"));
+			string tag = line.substr(1);
 			
-			if ( seqs.size() == 0 )
-			{
-				const char * desc = strtok(0, "\n");
-				
-				if ( desc )
-				{
-					refDesc = desc;
-				}
-			}
+			string name = parseNameFromTag(tag);
+			string desc = parseDescriptionFromTag(tag);
 			
 			if ( seqs.size() == 0 )
 			{
 				refTag = tag;
+				refDesc = desc;
 			}
 			
 			TrackList::Track * track;
@@ -562,7 +550,7 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 				
 				try
 				{
-					trackIndecesNew[trackList->getTrackIndexByFile(tag.c_str())] = seqs.size();
+					trackIndecesNew[trackList->getTrackIndexByFile(name.c_str())] = seqs.size();
 				}
 				catch ( const TrackList::TrackNotFoundException & e )
 				{
@@ -573,15 +561,26 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 			}
 			else
 			{
-				track = &trackList->getTrackMutable(trackList->addTrack(tag.c_str()));
+				track = &trackList->getTrackMutable(trackList->addTrack(name.c_str()));
 			}
 			
-			track->file = tag;
+			track->file = name;
 			seqs.resize(seqs.size() + 1);
 		}
-		
-		in.getline(line, (1 << 20) - 1);
-		seqs[seqs.size() - 1].append(line);
+		else if ( line[0] != '#' )
+		{
+			if ( seqs.size() == 0 )
+			{
+				throw BadInputFileException();
+			}
+			
+			seqs[seqs.size() - 1].append(line);
+		}
+	}
+	
+	if ( seqs.size() == 0 )
+	{
+		throw BadInputFileException();
 	}
 	
 	in.close();
@@ -604,7 +603,7 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 	if ( variantList )
 	{
 		variantList->init();
-		variantList->addVariantsFromAlignment(seqs, *referenceList, 0, 0, false);
+		variantList->addVariantsFromAlignment(seqs, *referenceList, 0, 0, lcbs[0].length, false);
 		variantList->sortVariants();
 	}
 }
@@ -943,6 +942,7 @@ void LcbList::initWithSingleLcb(const ReferenceList & referenceList, const Track
 	LcbList::Lcb * lcb = &lcbs[0];
 	lcb->position = 0;
 	lcb->regions.resize(trackList.getTrackCount());
+	lcb->length = totalLength;
 	
 	for ( int i = 0; i < trackList.getTrackCount(); i++ )
 	{
@@ -954,6 +954,106 @@ void LcbList::initWithSingleLcb(const ReferenceList & referenceList, const Track
 	}
 }
 
+void LcbList::writeToMfa(ostream & out, const ReferenceList & referenceList, const TrackList & trackList, const VariantList & variantList) const
+{
+	// now iterate over alignments
+	
+	int totrefgaps = 0;
+	
+	for ( int i = 0; i < trackList.getTrackCount(); i++)
+	{
+		int refend = 0;
+		int currvar = 0;
+		int width = 80;
+		int col = 0;
+		
+		out << '>' << trackList.getTrack(i).file << endl;
+		
+		for ( int j = 0; j < lcbs.size(); j++ )
+		{
+			const LcbList::Lcb & lcb = lcbs.at(j);
+			int refIndex = lcb.sequence;
+			int refstart = lcb.position;
+			const LcbList::Region & region = lcb.regions.at(i);
+			
+			int currpos = refstart;
+			int variantsSize = variantList.getVariantCount();
+			const VariantList::Variant * currvarref = &variantList.getVariant(currvar);
+			
+			if ( currvarref->reference == '-' )
+			{
+				currpos--;
+			}
+			
+			while
+			(
+				currpos - refstart < lcb.regions.at(0).length ||
+				(
+					currvar < variantsSize &&
+					currvarref->sequence == refIndex &&
+					currvarref->position - refstart < lcb.regions.at(0).length
+				)
+			)
+			{
+				if ( currpos == referenceList.getReference(refIndex).sequence.size() )
+				{
+					printf("ERROR: LCB %d extends beyond reference (position %d)\n", j,
+					currpos);
+					return;
+				}
+				
+				if ( col == width )
+				{
+					out << endl;
+					col = 0;
+				}
+				
+				if
+				(
+					currvar == variantsSize ||
+					(currpos != currvarref->position && currpos >= refstart) ||
+					(
+						currvarref->reference == '-' &&
+						currvar > 0 &&
+						variantList.getVariant(currvar - 1).position != currpos &&
+						currpos >= refstart
+					)
+				)
+				{
+					out << referenceList.getReference(refIndex).sequence.at(currpos);
+					col++;
+					
+					if ( col == width )
+					{
+						out << endl;
+						col = 0;
+					}
+				}
+				
+				if ( currvar < variantsSize && currpos == currvarref->position )
+				{
+					out << currvarref->alleles[i];
+					currvar++;
+					
+					if ( currvar < variantsSize )
+					{
+						currvarref = &variantList.getVariant(currvar);
+					}
+					
+					col++;
+				}
+				
+				if ( currvar == variantsSize || currvarref->position > currpos || currvarref->sequence != refIndex )
+				{
+					currpos++;
+				}
+			}
+			
+		}
+		
+		out << endl;
+	}
+}
 void LcbList::writeToProtocolBuffer(Harvest * msg) const
 {
 	Harvest::Alignment * msgAlignment = msg->mutable_alignment();
@@ -1019,7 +1119,8 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 	for ( int j = 0; j < lcbs.size(); j++ )
 	{
 		const LcbList::Lcb & lcb = lcbs.at(j);
-		int refstart = lcb.regions.at(0).position;
+		int refstart = lcb.position;
+		int refIndex = lcb.sequence;
 		int refend = 0;
 		int blockVarStart;
 		
@@ -1067,17 +1168,19 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 			//string ref_slice(harvest.reference().references(0).sequence().substr(refstart,(end-start)+1));
 			
 			while
-			(false && (
+			(
 				currpos - refstart < lcb.regions.at(0).length ||
 				(
 					currvar < variantsSize &&
+					currvarref->sequence == refIndex &&
 					currvarref->position - refstart < lcb.regions.at(0).length
-				))
+				)
 			)
 			{
-				if ( currpos == referenceList.getReference(0).sequence.size() )
+				if ( currpos == referenceList.getReference(refIndex).sequence.size() )
 				{
 					printf("ERROR: LCB %d extends beyond reference (position %d)\n", j, currpos);
+					return;
 				}
 				
 				if ( col == width )
@@ -1098,7 +1201,7 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 					)
 				)
 				{
-					out << referenceList.getReference(0).sequence.at(currpos);
+					out << referenceList.getReference(refIndex).sequence.at(currpos);
 					col++;
 				
 					if ( col == width )
@@ -1121,7 +1224,7 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 					col++;
 				}
 				
-				if ( currvar == variantsSize || currvarref->position > currpos )
+				if ( currvar == variantsSize || currvarref->position > currpos || currvarref->sequence != refIndex )
 				{
 					currpos++;
 				}

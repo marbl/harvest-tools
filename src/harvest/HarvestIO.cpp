@@ -183,6 +183,11 @@ void HarvestIO::writeHarvest(const char * file)
 	google::protobuf::ShutdownProtobufLibrary();
 }
 
+void HarvestIO::writeMfa(std::ostream &out) const
+{
+	lcbList.writeToMfa(out, referenceList, trackList, variantList);
+}
+
 void HarvestIO::writeNewick(std::ostream &out) const
 {
 	if ( ! phylogenyTree.getRoot() )

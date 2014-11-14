@@ -6,8 +6,9 @@
 
 #include <iostream>
 #include <fstream>
-#include "HarvestIO.h"
+#include "harvest/HarvestIO.h"
 #include <string.h>
+#include "harvest/exceptions.h"
 
 using namespace::std;
 
@@ -24,6 +25,7 @@ int main(int argc, const char * argv[])
 	const char * vcf = 0;
 	const char * xmfa = 0;
 	const char * outFasta = 0;
+	const char * outMfa = 0;
 	const char * outNewick = 0;
 	const char * outSnp = 0;
 	const char * outVcf = 0;
@@ -57,6 +59,7 @@ int main(int argc, const char * argv[])
 				case 'h': help = true; break;
 				case 'i': input = argv[++i]; break;
 				case 'm': mfa = argv[++i]; break;
+				case 'M': outMfa = argv[++i]; break;
 				case 'n': newick = argv[++i]; break;
 				case 'N': outNewick = argv[++i]; break;
 				case 'o': output = argv[++i]; break;
@@ -85,6 +88,7 @@ int main(int argc, const char * argv[])
 		cout << "   -g <reference genbank>" << endl;
 		cout << "   -a <MAF alignment input>" << endl;
 		cout << "   -m <multi-fasta alignment input>" << endl;
+		cout << "   -M <multi-fasta alignment output (concatenated LCBs)>" << endl;
 		cout << "   -n <Newick tree input>" << endl;
 		cout << "   -N <Newick tree output>" << endl;
 		cout << "   --midpoint-reroot" << endl;
@@ -109,8 +113,16 @@ int main(int argc, const char * argv[])
 	
 	if ( mfa )
 	{
-		if ( ! quiet ) cerr << "Loading " << mfa << "..." << endl;
-		hio.loadMfa(mfa, vcf == 0);
+		try
+		{
+			if ( ! quiet ) cerr << "Loading " << mfa << "..." << endl;
+			hio.loadMfa(mfa, vcf == 0);
+		}
+		catch ( const BadInputFileException & )
+		{
+			cerr << "   ERROR: " << mfa << " does not look like an MFA file." << endl;
+			return 1;
+		}
 	}
 	
 	if ( fasta )
@@ -134,6 +146,7 @@ int main(int argc, const char * argv[])
 		catch (const LcbList::NoCoreException & e )
 		{
 			cerr << "   ERROR: No alignment involving all " << e.queryCount << " sequences found in " << maf << '.' << endl;
+			return 1;
 		}
 	}
 	
@@ -251,6 +264,22 @@ int main(int argc, const char * argv[])
 		hio.writeFasta(*fp);
 	}
 	
+	if ( outMfa )
+	{
+		if (!quiet) cerr << "Writing " << outMfa << "...\n";
+		
+		std::ostream* fp = &cout;
+		std::ofstream fout;
+		
+		if (out1.compare(outMfa) != 0) 
+		{
+			fout.open(outMfa);
+			fp = &fout;
+		}
+		
+		hio.writeMfa(*fp);
+	}
+
 	if ( outNewick )
 	{
 		if (!quiet) cerr << "Writing " << outNewick << "...\n";

@@ -8,7 +8,6 @@
 #include <fstream>
 #include <sstream>
 #include "harvest/parse.h"
-#include <tuple>
 #include <set>
 
 using namespace::std;

@@ -1130,7 +1130,7 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 			
 			const LcbList::Region & region = lcb.regions.at(r);
 			int start = region.position;
-			int end = start + region.length;
+			int end = start + region.length - 1;
 			
 			if (r == 0)
 			{
@@ -1157,11 +1157,16 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 			int width = 80;
 			int col = 0;
 			int variantsSize = variantList.getVariantCount();
-			const VariantList::Variant * currvarref = &variantList.getVariant(currvar);
+			const VariantList::Variant * currvarref;
 			
-			if ( currvarref->alleles[0] == '-' )
+			if ( currvar < variantsSize )
 			{
-				currpos--;
+				currvarref = &variantList.getVariant(currvar);
+			
+				if ( currvarref->alleles[0] == '-' )
+				{
+					currpos--;
+				}
 			}
 			
 			//var =  harvest.variation().variants(currvar);//.alleles()[r];

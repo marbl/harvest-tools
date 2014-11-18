@@ -529,7 +529,7 @@ void LcbList::initFromMfa(const char * file, ReferenceList * referenceList, Trac
 	
 	while ( getline(in, line) )
 	{
-		if ( in.peek() == '>' )
+		if ( line[0] == '>' )
 		{
 			string tag = line.substr(1);
 			

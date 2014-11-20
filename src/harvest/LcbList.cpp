@@ -14,6 +14,7 @@
 #include "harvest/exceptions.h"
 #include "harvest/VariantList.h"
 #include <algorithm>
+#include <numeric_limits>
 
 using namespace::std;
 

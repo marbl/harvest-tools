@@ -9,6 +9,7 @@
 #include <sstream>
 #include "harvest/parse.h"
 #include <set>
+#include <algorithm>
 
 using namespace::std;
 

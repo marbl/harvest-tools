@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include "harvest/exceptions.h"
 #include "harvest/VariantList.h"
+#include <algorithm>
 
 using namespace::std;
 

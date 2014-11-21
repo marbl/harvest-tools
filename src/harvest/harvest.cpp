@@ -79,8 +79,8 @@ int main(int argc, const char * argv[])
 	
 	if (help || argc < 2)
 	{
-		cout << "harVest usage: harvest " << endl;
-		cout << "   -i <harvest input>" << endl;
+		cout << "harvesttools options:" << endl;
+		cout << "   -i <Gingr input>" << endl;
 		cout << "   -b <bed filter intervals>,<filter name>,\"<description>\"" << endl;
 		cout << "   -B <output backbone intervals>" << endl;
 		cout << "   -f <reference fasta>" << endl;
@@ -91,8 +91,8 @@ int main(int argc, const char * argv[])
 		cout << "   -M <multi-fasta alignment output (concatenated LCBs)>" << endl;
 		cout << "   -n <Newick tree input>" << endl;
 		cout << "   -N <Newick tree output>" << endl;
-		cout << "   --midpoint-reroot" << endl;
-		cout << "   -o <hvt output>" << endl;
+		cout << "   --midpoint-reroot (reroot the tree at its midpoint after loading)" << endl;
+		cout << "   -o <Gingr output>" << endl;
 		cout << "   -S <output for multi-fasta SNPs>" << endl;
 		cout << "   -v <VCF input>" << endl;
 		cout << "   -V <VCF output>" << endl;

@@ -980,11 +980,16 @@ void LcbList::writeToMfa(ostream & out, const ReferenceList & referenceList, con
 			
 			int currpos = refstart;
 			int variantsSize = variantList.getVariantCount();
-			const VariantList::Variant * currvarref = &variantList.getVariant(currvar);
+			const VariantList::Variant * currvarref;
 			
-			if ( currvarref->reference == '-' )
+			if ( currvar < variantsSize )
 			{
-				currpos--;
+				currvarref = &variantList.getVariant(currvar);
+			
+				if ( currvarref->alleles[0] == '-' )
+				{
+					currpos--;
+				}
 			}
 			
 			while

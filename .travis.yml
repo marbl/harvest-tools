@@ -7,3 +7,10 @@ before_install:
   - sudo apt-get install -y protobuf-compiler
   - sudo apt-get install -y libprotobuf-dev
 script: ./bootstrap.sh && ./configure --with-protobuf=/usr/ && make
+deploy:
+  provider: releases
+  file: ./bin/harvesttools
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true

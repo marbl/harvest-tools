@@ -2,3 +2,4 @@ language: cpp
 compiler:
   - gcc
   - clang
+script: ./bootstrap.sh && configure && make

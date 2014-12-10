@@ -9,7 +9,7 @@ Dependencies:
 
 Steps:
 ------
-   ./bootsrap.sh
+   ./bootstrap.sh
    ./configure [--prefix=...] [--with-protobuf=...]
    make
    [sudo] make install

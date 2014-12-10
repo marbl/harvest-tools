@@ -14,4 +14,4 @@ INSTALL.txt provides instructions for building from source and installing.
 LICENSE.txt provides licensing information.
 
 ![Travis-CI build status]
-(https://travis-ci.org/marbl/harvest-tools.svg)
+(https://travis-ci.org/marbl/harvest-tools.svg?branch=master)

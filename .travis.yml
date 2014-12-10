@@ -4,8 +4,7 @@ compiler:
 - clang
 before_install:
 - sudo apt-get update -qq
-- sudo apt-get install -y protobuf-compiler
-- sudo apt-get install -y libprotobuf-dev
+- sudo apt-get install -y protobuf-compiler libprotobuf-dev
 script: ./bootstrap.sh && ./configure --with-protobuf=/usr/ && make
 deploy:
   provider: releases

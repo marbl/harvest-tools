@@ -20,7 +20,8 @@ notifications:
     on_success: change
     on_failure: always
 os:
-  - osx
+- linux
+- osx
 osx_image: xcode61
 deploy:
   provider: releases

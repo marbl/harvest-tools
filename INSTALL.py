@@ -6,7 +6,7 @@ print "<<Welcome to harVest utility script install>>"
 #check for python version                                                                                                                                                                         
 if (sys.version_info[0] < 2) or (sys.version_info[0] == 2 and sys.version_info[1] < 6):
 
-  print "Python version is %s. metAMOS requires at least 2.6"%(sys.version)
+  print "Python version is %s. harvest-tools requires at least 2.6"%(sys.version)
   sys.exit(1)
 
 #complete shebang

@@ -27,7 +27,9 @@ deploy:
   provider: releases
   api_key:
     secure: h82kGW1iD80xXArooopp330Arr7nzuhOFlYpn9wjrcNXJzaGom2aKMTatb2pfGCrWFItsTTjoJCItN9TQto5CMtXE3lQhHxhw/Eotzshu0FsuxYk9KkixByZHnC7eDP4BpZKMJE74sjAYDUn0BgqL49xSL6+p4pak+cNZP7kxSk=
-  file: harvest_osx harvest_linux
+  file: 
+  - harvest_osx
+  - harvest_linux
   skip_cleanup: true
   on:
     tags: true

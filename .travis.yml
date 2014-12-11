@@ -6,8 +6,10 @@ before_install:
 - if [ $TRAVIS_OS_NAME == osx ]; then brew update; fi
 - if [ $TRAVIS_OS_NAME == osx ]; then brew tap homebrew/versions; fi
 - if [ $TRAVIS_OS_NAME == osx ]; then brew install protobuf241; fi
+- if [ $TRAVIS_OS_NAME == osx ]; brew link --force --overwrite protobuf241; fi
 script: 
-- ./bootstrap.sh && ./configure --with-protobuf=/usr/ && make
+- if [ $TRAVIS_OS_NAME == linux ]; then ./bootstrap.sh && ./configure --with-protobuf=/usr/ && make; fi
+- if [ $TRAVIS_OS_NAME == osx ]; then ./bootstrap.sh && ./configure --with-protobuf=/usr/local/Cellar/ && make; fi
 - if [ $TRAVIS_OS_NAME == osx ]; then mv harvest harvest_osx; fi
 - if [ $TRAVIS_OS_NAME == linux ]; then mv harvest harvest_linux; fi
 notifications:
@@ -16,7 +18,7 @@ notifications:
       - ondovb@nbacc.net
       - treangent@nbacc.net
     on_success: change
-    on_failure: always
+    on_failure: change
 os:
 - linux
 - osx

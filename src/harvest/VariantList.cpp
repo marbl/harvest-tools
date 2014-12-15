@@ -35,7 +35,7 @@ bool operator<(const VariantList::VariantSortKey & a, const VariantList::Variant
 void VariantList::addFilterFromBed(const char * file, const char * name, const char * desc)
 {
 	ifstream in(file);
-	char line[1 << 20];
+	char * line = new char[1 << 20];
 	int i = 0;
 	long long int flag = 1 << filters.size();
 	
@@ -84,6 +84,8 @@ void VariantList::addFilterFromBed(const char * file, const char * name, const c
 			i++;
 		}
 	}
+	
+	delete [] line;
 }
 
 void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const ReferenceList & referenceList, int sequence, int position, int length, bool reverse)

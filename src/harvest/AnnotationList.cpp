@@ -18,7 +18,7 @@ void AnnotationList::clear()
 void AnnotationList::initFromGenbank(const char * file, ReferenceList & referenceList, bool useSeq)
 {
 	ifstream in(file);
-	char line[1 << 20];
+	char * line = new char[1 << 20];
 	Annotation * annotation = 0;
 	int offset;
 	
@@ -273,6 +273,7 @@ void AnnotationList::initFromGenbank(const char * file, ReferenceList & referenc
 		printf("%s\t%d\t%d\t%c\t%s\t%s\n", annotation->locus.c_str(), annotation->start, annotation->end, annotation->reverse ? '-' : '+', annotation->name.c_str(), annotation->description.c_str());
 	}
 	
+	delete [] line;
 	in.close();
 }
 

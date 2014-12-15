@@ -791,7 +791,6 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 				}
 			}
 			
-			cerr << "LCB: " << keyLast.position << '-' << endPos << endl;
 			lcbList->addLcbByReference(keyLast.sequence, keyLast.position, endSeq, endPos, referenceList, *trackList);
 			
 			if ( key == ambiguousIndels.end() )
@@ -821,8 +820,6 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 				
 					
 				key++;
-				cerr << "keyLast: " << keyLast.position
-					<< ',' << keyLast.offset << "\tkey: " << key->position << ',' << key->offset << endl;
 			}
 			while
 			(

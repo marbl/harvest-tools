@@ -1,0 +1,37 @@
+language: cpp
+compiler: gcc
+before_install:
+- if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get update -qq; fi
+- if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get install -y protobuf-compiler libprotobuf-dev; fi
+- if [ $TRAVIS_OS_NAME == osx ]; then brew update; fi
+- if [ $TRAVIS_OS_NAME == osx ]; then brew tap homebrew/versions; fi
+- if [ $TRAVIS_OS_NAME == osx ]; then brew install protobuf241; fi
+- if [ $TRAVIS_OS_NAME == osx ]; then brew link --force --overwrite protobuf241; fi
+script: 
+- if [ $TRAVIS_OS_NAME == linux ]; then ./bootstrap.sh && ./configure --with-protobuf=/usr/ && make; fi
+- if [ $TRAVIS_OS_NAME == osx ]; then ./bootstrap.sh && ./configure --with-protobuf=/usr/local/Cellar/protobuf241/2.4.1/ && make; fi
+- if [ $TRAVIS_OS_NAME == osx ]; then mv harvest harvest_osx; fi
+- if [ $TRAVIS_OS_NAME == linux ]; then mv harvest harvest_linux; fi
+notifications:
+  email:
+    recipients:
+      - ondovb@nbacc.net
+      - treangent@nbacc.net
+    on_success: change
+    on_failure: change
+os:
+- linux
+- osx
+osx_image: xcode61
+deploy:
+  provider: releases
+  api_key:
+    secure: h82kGW1iD80xXArooopp330Arr7nzuhOFlYpn9wjrcNXJzaGom2aKMTatb2pfGCrWFItsTTjoJCItN9TQto5CMtXE3lQhHxhw/Eotzshu0FsuxYk9KkixByZHnC7eDP4BpZKMJE74sjAYDUn0BgqL49xSL6+p4pak+cNZP7kxSk=
+  file: 
+  - harvest_osx
+  - harvest_linux
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true
+    repo: marbl/harvest-tools

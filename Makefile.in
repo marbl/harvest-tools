@@ -23,7 +23,7 @@ OBJECTS=$(SOURCES:.cpp=.o) src/harvest/pb/harvest.pb.o
 all : harvest libharvest.a
 
 harvest : $(OBJECTS) libharvest.a
-	gcc ${flags} -o harvest -lstdc++ -lz -lm $(OBJECTS) libharvest.a @protobuf@/lib/libprotobuf.a
+	gcc ${flags} -o harvest $(OBJECTS) libharvest.a @protobuf@/lib/libprotobuf.a -lstdc++ -lz -lm -lpthread
 
 libharvest.a : $(OBJECTS)
 	ar -cr libharvest.a $(OBJECTS)

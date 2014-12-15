@@ -1,3 +1,6 @@
+![Travis-CI build status]
+(https://travis-ci.org/marbl/harvest-tools.svg?branch=master)
+
 HarvestTools is a part of the Harvest software suite and provides file
 conversion between Gingr files and various standard text formats. HarvestTools
 is normally distributed as a binary for OS X or Linux:

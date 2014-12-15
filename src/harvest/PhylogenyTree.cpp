@@ -57,7 +57,7 @@ void PhylogenyTree::initFromNewick(const char * file, TrackList * trackList)
 	}
 	
 	ifstream in(file);
-	char line[1 << 20];
+	char * line = new char[1 << 20];
 	
 	bool useNames = trackList->getTrackCount() == 0;
 	
@@ -74,6 +74,7 @@ void PhylogenyTree::initFromNewick(const char * file, TrackList * trackList)
 		throw;
 	}
 	
+	delete [] line;
 	in.close();
 	init();
 }

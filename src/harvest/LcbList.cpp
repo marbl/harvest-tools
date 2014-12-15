@@ -644,7 +644,7 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 	lcbs.resize(0);
 	
 	ifstream in(file);
-	char line[1 << 20];
+	char * line = new char[1 << 20];
 	int trackIndex = 0;
 	vector<string> seqs;
 	const bool oldTags = phylogenyTree->getRoot();
@@ -928,6 +928,7 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 		variantList->sortVariants();
 	}
 	
+	delete [] line;
 	in.close();
 }
 

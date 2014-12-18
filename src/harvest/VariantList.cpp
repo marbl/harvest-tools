@@ -395,13 +395,17 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 	map<string, int> refByTag;
 	//unsigned int alleleCount = 0;
 	
-	bool oldTags = trackList->getTrackCount();
+	const bool oldTags = phylogenyTree->getRoot();
 	int * trackIndecesNew;
 	int lineIndex = 1;
 	
 	if ( oldTags )
 	{
 		trackIndecesNew = new int[trackList->getTrackCount()];
+	}
+	else
+	{
+		trackList->clear();
 	}
 	
 	for ( int i = 0; i < referenceList.getReferenceCount(); i++ )

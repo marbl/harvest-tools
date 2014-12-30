@@ -43,7 +43,7 @@ public:
 	void setParent(PhylogenyTreeNode * parentNew, float distanceNew);
 	void setTrackId(int trackIdNew);
 	void swapSiblings();
-	void writeToNewick(std::ostream &out, const TrackList & trackList) const;
+	void writeToNewick(std::ostream &out, const TrackList & trackList, const double mult = 1.0) const;
 	void writeToProtocolBuffer(Harvest::Tree::Node * msgNode) const;
 	
 private:

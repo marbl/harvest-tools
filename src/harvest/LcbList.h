@@ -64,6 +64,7 @@ public:
 	void addLcbByReference(int startSeq, int startPos, int endSeq, int endPos, const ReferenceList & referenceList, const TrackList & trackList);
 	void clear();
 	const Lcb & getLcb(int index) const;
+        double getCoreSize() const;
 	int getLcbCount() const;
 	void initFromMaf(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList, const char * referenceFileName);
 	void initFromMfa(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList);

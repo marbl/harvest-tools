@@ -35,15 +35,15 @@ public:
 	void writeToProtocolBuffer(Harvest * msg) const;
 	
 	PhylogenyTreeNode * getRoot() const;
-	
+	double mult;
 private:
 	
 	void init();
 	void reroot(const PhylogenyTreeNode * rootNew, float distance, bool reorder = false);
-	
 	std::vector<PhylogenyTreeNode *> leaves;
 	PhylogenyTreeNode * root;
 	int nodeCount;
+
 };
 
 inline const PhylogenyTreeNode * PhylogenyTree::getLeaf(int id) const {return leaves[id];}

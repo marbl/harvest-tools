@@ -322,7 +322,7 @@ void PhylogenyTreeNode::swapSiblings()
 	children[1] = temp;
 }
 
-void PhylogenyTreeNode::writeToNewick(std::ostream &out, const TrackList & trackList) const
+void PhylogenyTreeNode::writeToNewick(std::ostream &out, const TrackList & trackList, const double mult) const
 {
 	if ( children.size() )
 	{
@@ -330,7 +330,7 @@ void PhylogenyTreeNode::writeToNewick(std::ostream &out, const TrackList & track
 		
 		for ( int i = 0; i < children.size(); i++ )
 		{
-			children[i]->writeToNewick(out, trackList);
+		        children[i]->writeToNewick(out, trackList,mult);
 		
 			if ( i < children.size() - 1 )
 			{
@@ -349,8 +349,10 @@ void PhylogenyTreeNode::writeToNewick(std::ostream &out, const TrackList & track
 	{
 		out << '\'' << trackList.getTrack(trackId).file << '\'';
 	}
-	
-	out << ':' << distance;
+        //by default, always use multiplier
+        //can be 1.0, or an adjusted value
+        //alternatively, this could be conditional based on the parameter, instead of using 1.0 vs non-1.0 values
+	out << ':' << distance * mult;
 }
 
 void PhylogenyTreeNode::writeToProtocolBuffer(Harvest::Tree::Node * msgNode) const

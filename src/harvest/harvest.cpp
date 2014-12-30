@@ -32,6 +32,7 @@ int main(int argc, const char * argv[])
 	const char * outBB = 0;
 	const char * outXmfa = 0;
 	bool help = false;
+	bool updateBranchVals = false;
 	bool quiet = false;
 	bool midpointReroot = false;
 	
@@ -65,6 +66,17 @@ int main(int argc, const char * argv[])
 				case 'o': output = argv[++i]; break;
 				case 'q': quiet = true; break;
 				case 'S': outSnp = argv[++i]; break;
+			        case 'u':
+				        //updateBranchVals = argv[++i];
+				        if ( strcmp(argv[++i], "0") == 0 )
+				        {
+				            updateBranchVals = false;
+				        } 
+                                        else
+					{
+	 				    updateBranchVals = true;
+                                        }
+                                        break; 
 				case 'v': vcf = argv[++i]; break;
 				case 'V': outVcf = argv[++i]; break;
 				case 'x': xmfa = argv[++i]; break;
@@ -94,6 +106,7 @@ int main(int argc, const char * argv[])
 		cout << "   --midpoint-reroot (reroot the tree at its midpoint after loading)" << endl;
 		cout << "   -o <Gingr output>" << endl;
 		cout << "   -S <output for multi-fasta SNPs>" << endl;
+		cout << "   -u 0/1 (update the branch values to reflect genome length)" << endl;
 		cout << "   -v <VCF input>" << endl;
 		cout << "   -V <VCF output>" << endl;
 		cout << "   -x <xmfa alignment file>" << endl;
@@ -242,6 +255,27 @@ int main(int argc, const char * argv[])
 	{
 		hio.phylogenyTree.midpointReroot();
 	}
+
+	if ( updateBranchVals )
+	{
+	    //by default will skip this
+            
+            //Parsnp needs this to be updated, since branch length estimates not on full multi-alignment
+            //if updated, set a multiplier that will be applied when outputting newick file
+            //For Gingr, by default will apply this value
+	    //only update if needs updating, might be already set to correct value
+            if (hio.phylogenyTree.mult == 1.0)
+	    {
+ 	       double mult = hio.variantList.getVariantCount()/hio.lcbList.getCoreSize();
+               hio.phylogenyTree.mult = mult;
+	    }
+	}
+        else//if 0
+	{
+	    //reset to 1.0, in case it has been previously modified
+            //will overwrite previous value upon hio write
+            hio.phylogenyTree.mult = 1.0;
+        }
 	
 	if ( output )
 	{
@@ -292,7 +326,6 @@ int main(int argc, const char * argv[])
 			fout.open(outNewick);
 			fp = &fout;
 		}
-		
 		hio.writeNewick(*fp);
 	}
 	

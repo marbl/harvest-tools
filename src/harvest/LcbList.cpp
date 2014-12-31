@@ -30,24 +30,19 @@ bool lcbLessThan(const LcbList::Lcb a, const LcbList::Lcb & b)
 	}
 }
 
-
 double LcbList::getCoreSize(void) const
 {
     double coreSize = 0;
-
+	
     //LcbList::Lcb * lcb = &lcbs[lcbs.size() - 1];
     
     for ( int i = 0; i < lcbs.size(); i++ )
     {
-
-      const LcbList::Lcb & lcb = lcbs.at(i);
-      for (int j = 0; j < lcb.regions.size(); j++)
-      {
-	  const LcbList::Region & region = lcb.regions.at(j);
-          coreSize+=region.length;
-      }
-
+		const LcbList::Lcb & lcb = lcbs.at(i);
+		
+		coreSize += lcb.regions.at(0).length;
     }
+    
     return coreSize;
 }
 

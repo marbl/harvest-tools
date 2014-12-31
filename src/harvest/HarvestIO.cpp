@@ -188,7 +188,7 @@ void HarvestIO::writeMfa(std::ostream &out) const
 	lcbList.writeToMfa(out, referenceList, trackList, variantList);
 }
 
-void HarvestIO::writeNewick(std::ostream &out) const
+void HarvestIO::writeNewick(std::ostream &out, bool useMult) const
 {
 	if ( ! phylogenyTree.getRoot() )
 	{
@@ -196,7 +196,7 @@ void HarvestIO::writeNewick(std::ostream &out) const
 		exit(1);
 	}
 	
-	phylogenyTree.writeToNewick(out, trackList);
+	phylogenyTree.writeToNewick(out, trackList, useMult);
 }
 
 void HarvestIO::writeXmfa(std::ostream &out, bool split) const

@@ -39,7 +39,7 @@ public:
 	void writeFasta(std::ostream &out) const;
 	void writeHarvest(const char * file);
 	void writeMfa(std::ostream &out) const;
-	void writeNewick(std::ostream &out) const;
+	void writeNewick(std::ostream &out, bool useMult = false) const;
 	void writeSnp(std::ostream &out, bool indels = false) const;
 	void writeVcf(std::ostream &out, bool indels = false) const;
 	void writeXmfa(std::ostream &out, bool split = false) const;

@@ -24,18 +24,19 @@ public:
 	void clear();
 	const PhylogenyTreeNode * getLeaf(int id) const;
 	void getLeafIds(std::vector<int> & ids) const;
+	double getMult() const;
 	int getNodeCount() const;
 	void initFromNewick(const char * file, TrackList * trackList);
 	void initFromProtocolBuffer(const Harvest::Tree & msg);
 	float leafDistance(int leaf1, int leaf2) const;
 	void midpointReroot();
+	void setMult(double multNew);
 	void setOutgroup(const PhylogenyTreeNode * node);
 	void setTrackIndeces(int * trackIndecesNew);
-	void writeToNewick(std::ostream &out, const TrackList & trackList) const;
+	void writeToNewick(std::ostream &out, const TrackList & trackList, bool useMult) const;
 	void writeToProtocolBuffer(Harvest * msg) const;
 	
 	PhylogenyTreeNode * getRoot() const;
-	double mult;
 private:
 	
 	void init();
@@ -43,11 +44,13 @@ private:
 	std::vector<PhylogenyTreeNode *> leaves;
 	PhylogenyTreeNode * root;
 	int nodeCount;
-
+	double mult;
 };
 
 inline const PhylogenyTreeNode * PhylogenyTree::getLeaf(int id) const {return leaves[id];}
 inline int PhylogenyTree::getNodeCount() const {return nodeCount;}
+inline double PhylogenyTree::getMult() const { return mult; }
 inline PhylogenyTreeNode * PhylogenyTree::getRoot() const {return this->root;}
+inline void PhylogenyTree::setMult(double multNew) { mult = multNew; }
 
 #endif

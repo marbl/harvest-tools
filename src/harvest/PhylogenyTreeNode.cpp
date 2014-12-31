@@ -330,8 +330,8 @@ void PhylogenyTreeNode::writeToNewick(std::ostream &out, const TrackList & track
 		
 		for ( int i = 0; i < children.size(); i++ )
 		{
-		        children[i]->writeToNewick(out, trackList,mult);
-		
+			children[i]->writeToNewick(out, trackList, mult);
+			
 			if ( i < children.size() - 1 )
 			{
 				out << ',';
@@ -349,9 +349,9 @@ void PhylogenyTreeNode::writeToNewick(std::ostream &out, const TrackList & track
 	{
 		out << '\'' << trackList.getTrack(trackId).file << '\'';
 	}
-        //by default, always use multiplier
-        //can be 1.0, or an adjusted value
-        //alternatively, this could be conditional based on the parameter, instead of using 1.0 vs non-1.0 values
+	//by default, always use multiplier
+	//can be 1.0, or an adjusted value
+	//alternatively, this could be conditional based on the parameter, instead of using 1.0 vs non-1.0 values
 	out << ':' << distance * mult;
 }
 

@@ -12,6 +12,7 @@ using namespace::std;
 PhylogenyTree::PhylogenyTree()
 {
 	root = 0;
+        mult = 1.0;
 }
 
 PhylogenyTree::~PhylogenyTree()
@@ -79,6 +80,7 @@ void PhylogenyTree::initFromNewick(const char * file, TrackList * trackList)
 	init();
 }
 
+
 void PhylogenyTree::initFromProtocolBuffer(const Harvest::Tree & msg)
 {
 	if ( root )
@@ -89,7 +91,16 @@ void PhylogenyTree::initFromProtocolBuffer(const Harvest::Tree & msg)
 	int leaf = 0;
 	root = new PhylogenyTreeNode(msg.root());
 	init();
+	if ( msg.has_multiplier() )
+	{
+	  mult = msg.multiplier();
+	}
+	else
+	{
+	  mult = 1.0;
+	}
 }
+
 
 float PhylogenyTree::leafDistance(int leaf1, int leaf2) const
 {
@@ -243,11 +254,18 @@ void PhylogenyTree::reroot(const PhylogenyTreeNode * rootNew, float distance, bo
 
 void PhylogenyTree::writeToNewick(std::ostream &out, const TrackList & trackList) const
 {
-	root->writeToNewick(out, trackList);
+        root->writeToNewick(out, trackList, mult);
 	out << ";\n";
 }
 
 void PhylogenyTree::writeToProtocolBuffer(Harvest * msg) const
 {
-	root->writeToProtocolBuffer(msg->mutable_tree()->mutable_root());
+        Harvest::Tree * msgNode = msg->mutable_tree();
+        //save multiplier value to protobuf
+	msgNode->set_multiplier(mult);
+	root->writeToProtocolBuffer(msgNode->mutable_root());
 }
+
+
+
+

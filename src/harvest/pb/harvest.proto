@@ -49,8 +49,9 @@ message Harvest
 			optional uint32 track = 3; // 0-index to 'TrackList.tracks' (leaves only)
 			optional float bootstrap = 4;
 		}
-		
+
 		optional Node root = 1;
+		optional float multiplier = 2;
 	}
 	
 	message Alignment

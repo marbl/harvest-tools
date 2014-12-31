@@ -20,10 +20,10 @@ SOURCES=\
 	
 OBJECTS=$(SOURCES:.cpp=.o) src/harvest/pb/harvest.pb.o
 
-all : harvest libharvest.a
+all : harvesttools libharvest.a
 
-harvest : $(OBJECTS) libharvest.a
-	gcc ${flags} -o harvest $(OBJECTS) libharvest.a @protobuf@/lib/libprotobuf.a -lstdc++ -lz -lm -lpthread
+harvesttools : $(OBJECTS) libharvest.a
+	gcc ${flags} -o harvesttools $(OBJECTS) libharvest.a @protobuf@/lib/libprotobuf.a -lstdc++ -lz -lm -lpthread
 
 libharvest.a : $(OBJECTS)
 	ar -cr libharvest.a $(OBJECTS)
@@ -44,7 +44,7 @@ install : libharvest.a
 	mkdir -p @prefix@/include/
 	mkdir -p @prefix@/include/harvest
 	mkdir -p @prefix@/include/harvest/pb
-	ln -sf `pwd`/harvest @prefix@/bin/
+	ln -sf `pwd`/harvesttools @prefix@/bin/
 	ln -sf `pwd`/libharvest.a @prefix@/lib/
 	ln -sf `pwd`/src/harvest/exceptions.h @prefix@/include/harvest/
 	ln -sf `pwd`/src/harvest/HarvestIO.h @prefix@/include/harvest/
@@ -59,7 +59,7 @@ install : libharvest.a
 	ln -sf `pwd`/src/harvest/VariantList.h @prefix@/include/harvest/
 
 clean :
-	-rm harvest
+	-rm harvesttools
 	-rm libharvest.a
 	-rm src/harvest/*.o
 	-rm src/harvest/pb/*.o

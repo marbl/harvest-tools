@@ -10,8 +10,8 @@ before_install:
 script: 
 - if [ $TRAVIS_OS_NAME == linux ]; then ./bootstrap.sh && ./configure --with-protobuf=/usr/ && make; fi
 - if [ $TRAVIS_OS_NAME == osx ]; then ./bootstrap.sh && ./configure --with-protobuf=/usr/local/Cellar/protobuf241/2.4.1/ && make; fi
-- if [ $TRAVIS_OS_NAME == osx ]; then mv harvest harvest_osx; fi
-- if [ $TRAVIS_OS_NAME == linux ]; then mv harvest harvest_linux; fi
+- if [ $TRAVIS_OS_NAME == osx ]; then mv harvesttools harvest_osx; fi
+- if [ $TRAVIS_OS_NAME == linux ]; then mv harvesttools harvest_linux; fi
 notifications:
   email:
     recipients:

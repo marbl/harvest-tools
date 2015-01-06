@@ -60,7 +60,7 @@ bool HarvestIO::loadHarvest(const char * file)
 	GzipInputStream gz(&raw_input);
 	CodedInputStream coded_input(&gz);
 	
-	coded_input.SetTotalBytesLimit(1 << 30, 1 << 30);
+	coded_input.SetTotalBytesLimit(INT_MAX, INT_MAX);
 	
 	if ( ! harvest.ParseFromCodedStream(&coded_input) )
 	{

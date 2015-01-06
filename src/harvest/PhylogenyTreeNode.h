@@ -64,8 +64,6 @@ private:
 	int trackId;
 	double distance;
 	float depth;
-	float depthAlign;
-	float distanceAlign;
 	int leafMin;
 	int leafMax;
 	float bootstrap;

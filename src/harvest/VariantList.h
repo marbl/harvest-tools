@@ -8,6 +8,7 @@
 #define VariantList_h
 
 #include <vector>
+#include "harvest/fb/harvest_generated.h"
 #include "harvest/pb/harvest.pb.h"
 #include "harvest/LcbList.h"
 #include "harvest/PhylogenyTree.h"
@@ -90,11 +91,13 @@ public:
 	const Variant & getVariant(int index) const;
 	int getVariantCount() const;
 	void init();
+	void initFromFlatBuffers(const fbHarvest::VariantList * pointerVariantList);
 	void initFromProtocolBuffer(const Harvest::Variation & msgVariation);
 	void initFromVcf(const char * file, const ReferenceList & referenceList, TrackList * trackList, LcbList * lcbList, PhylogenyTree * phylogenyTree);
 	void sortVariants();
 	void writeToMfa(std::ostream &out, bool indels, const TrackList & trackList) const;
 	void writeToProtocolBuffer(Harvest * harvest) const;
+	flatbuffers::Offset<fbHarvest::VariantList> writeToFlatBuffers(flatbuffers::FlatBufferBuilder & fbb) const;
 	void writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const TrackList & trackList) const;
 	
 	static bool variantLessThan(const Variant & a, const Variant & b)

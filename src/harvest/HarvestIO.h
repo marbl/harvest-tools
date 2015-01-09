@@ -18,6 +18,9 @@
 #include "harvest/LcbList.h"
 #include "harvest/VariantList.h"
 
+static const char * flatBufferHeader = "FlatBuffers";
+static const int flatBufferHeaderLength = strlen(flatBufferHeader);
+
 class HarvestIO
 {
 public:
@@ -30,6 +33,8 @@ public:
 	void loadFasta(const char * file);
 	void loadGenbank(const char * file, bool useSeq);
 	bool loadHarvest(const char * file);
+	bool loadHarvestFlatBuffer(const char * file);
+	bool loadHarvestProtocolBuffer(const char * file);
 	void loadMaf(const char * file, bool findVariants, const char * referenceFileName);
 	void loadMfa(const char * file, bool findVariants);
 	void loadNewick(const char * file);
@@ -55,8 +60,6 @@ public:
 private:
 	
 	void writeNewickNode(std::ostream &out, const Harvest::Tree::Node & msg) const;
-	
-	Harvest harvest;
 };
 
 #endif

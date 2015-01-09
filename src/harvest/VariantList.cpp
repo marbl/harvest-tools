@@ -12,6 +12,7 @@
 #include <algorithm>
 
 using namespace::std;
+using namespace::flatbuffers;
 
 bool operator<(const VariantList::VariantSortKey & a, const VariantList::VariantSortKey & b)
 {
@@ -329,6 +330,37 @@ void VariantList::init()
 	addFilter(FILTER_gaps, "ALN", "SNP in aligned 100b window with > 20 indels");
 	
 	variants.resize(0);
+}
+
+void VariantList::initFromFlatBuffers(const fbHarvest::VariantList * pointerVariantList)
+{
+	filters.resize(pointerVariantList->filters()->Length());
+	
+	for ( int i = 0; i < filters.size(); i++ )
+	{
+		const fbHarvest::Filter * pointerFilter = pointerVariantList->filters()->Get(i);
+		
+		filters[i].flag = pointerFilter->flag();
+		filters[i].name = pointerFilter->name()->c_str();
+		filters[i].description = pointerFilter->description()->c_str();
+		printf("FILTER:\t%d\t%s\t%s\n", filters[i].flag, filters[i].name.c_str(), filters[i].description.c_str());
+	}
+	
+	variants.resize(pointerVariantList->variants()->Length());
+	
+	for ( int i = 0; i < variants.size(); i++ )
+	{
+		Variant & variant = variants[i];
+		const fbHarvest::Variant * pointerVariant = pointerVariantList->variants()->Get(i);
+		
+		variant.sequence = pointerVariant->sequence();
+		variant.position = pointerVariant->position();
+		variant.alleles = pointerVariant->alleles()->c_str();
+		variant.filters = pointerVariant->filters();
+		variant.quality = pointerVariant->quality();
+		
+		printf("VARIANT: %d\t%d\t%s\t%ld\t%d\n", variant.sequence, variant.position, variant.alleles.c_str(), variant.filters, variant.quality);
+	}
 }
 
 void VariantList::initFromProtocolBuffer(const Harvest::Variation & msgVariation)
@@ -844,6 +876,48 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 void VariantList::sortVariants()
 {
 	sort(variants.begin(), variants.end(), variantLessThan);
+}
+
+Offset<fbHarvest::VariantList> VariantList::writeToFlatBuffers(FlatBufferBuilder & fbb) const
+{
+	Offset<fbHarvest::Filter> * offsetFilters = new Offset<fbHarvest::Filter>[filters.size()];
+	
+	for ( int i = 0; i < filters.size(); i++ )
+	{
+		fbHarvest::FilterBuilder filterBuilder(fbb);
+		
+		filterBuilder.add_flag(filters[i].flag);
+		filterBuilder.add_name(fbb.CreateString(filters[i].name));
+		filterBuilder.add_description(fbb.CreateString(filters[i].description));
+		
+		offsetFilters[i] = filterBuilder.Finish();
+	}
+	
+	delete [] offsetFilters;
+	
+	Offset<fbHarvest::Variant> * offsetVariants = new Offset<fbHarvest::Variant>[variants.size()];
+	
+	for ( int i = 0; i < variants.size(); i++ )
+	{
+		fbHarvest::VariantBuilder variantBuilder(fbb);
+		
+		variantBuilder.add_sequence(variants[i].sequence);
+		variantBuilder.add_reference(variants[i].reference);
+		variantBuilder.add_position(variants[i].position);
+		variantBuilder.add_alleles(fbb.CreateString(variants[i].alleles));
+		variantBuilder.add_filters(variants[i].filters);
+		
+		offsetVariants[i] = variantBuilder.Finish();
+	}
+	
+	delete [] offsetVariants;
+	
+	return fbHarvest::CreateVariantList
+	(
+		fbb,
+		fbb.CreateVector(offsetFilters, filters.size()),
+		fbb.CreateVector(offsetVariants, variants.size())
+	);
 }
 
 void VariantList::writeToMfa(std::ostream &out, bool indels, const TrackList & trackList) const

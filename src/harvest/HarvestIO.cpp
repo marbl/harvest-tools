@@ -13,6 +13,9 @@
 #include <fstream>
 #include <iostream>
 #include "parse.h"
+#include <sys/stat.h>
+#include "harvest/fb/harvest_generated.h"
+#include <string.h>
 
 using namespace::std;
 using namespace::google::protobuf::io;
@@ -49,6 +52,45 @@ void HarvestIO::loadGenbank(const char * file, bool useSeq)
 
 bool HarvestIO::loadHarvest(const char * file)
 {
+	ifstream in(file);
+	
+	char header[flatBufferHeaderLength];
+	
+	in.read(header, flatBufferHeaderLength);
+	in.close();
+	
+	if ( strncmp(header, flatBufferHeader, flatBufferHeaderLength) == 0 )
+	{
+		return loadHarvestFlatBuffer(file);
+	}
+	else
+	{
+		return loadHarvestProtocolBuffer(file);
+	}
+}
+
+bool HarvestIO::loadHarvestFlatBuffer(const char * file)
+{
+	struct stat info;
+	stat(file, &info);
+	
+	char * data = new char[info.st_size];
+	
+	ifstream in(file);
+	in.read(data, info.st_size);
+	in.close();
+	
+	auto harvest = fbHarvest::GetHarvest(data + flatBufferHeaderLength);
+	
+	variantList.initFromFlatBuffers(harvest->variantList());
+	
+	return true;
+}
+
+bool HarvestIO::loadHarvestProtocolBuffer(const char * file)
+{
+	Harvest harvest;
+	
 	int fd = open(file, O_RDONLY);
 	
 	if ( fd < 0 )
@@ -139,6 +181,10 @@ void HarvestIO::writeFasta(std::ostream &out) const
 
 void HarvestIO::writeHarvest(const char * file)
 {
+	flatbuffers::FlatBufferBuilder fbb;
+	fbHarvest::HarvestBuilder harvestBuilder(fbb);
+	
+	/*
 	if ( referenceList.getReferenceCount() )
 	{
 		referenceList.writeToProtocolBuffer(&harvest);
@@ -160,27 +206,37 @@ void HarvestIO::writeHarvest(const char * file)
 	{
 		lcbList.writeToProtocolBuffer(&harvest);
 	}
+	*/
 	
 	if ( variantList.getVariantCount() || variantList.getFilterCount() )
 	{
-		variantList.writeToProtocolBuffer(&harvest);
+		harvestBuilder.add_variantList(variantList.writeToFlatBuffers(fbb));
 	}
 	
-	int fd = open(file, O_CREAT | O_WRONLY | O_TRUNC, 0644);
-	FileOutputStream stream(fd);
-	GzipOutputStream zip_stream(&stream);
+	FinishHarvestBuffer(fbb, harvestBuilder.Finish());
 	
-	if ( ! harvest.SerializeToZeroCopyStream(&zip_stream) )
-	{
-		printf("Failed to write.\n");
-	}
+	std::ofstream fout(file);
 	
-	zip_stream.Close();
-	stream.Close();
-	close(fd);
+	fout.write(flatBufferHeader, flatBufferHeaderLength);
+	fout.write((char *)fbb.GetBufferPointer(), fbb.GetSize());
+	fout.close();
 	
-	harvest.Clear();
-	google::protobuf::ShutdownProtobufLibrary();
+//	int fd = open(file, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+	
+//	FileOutputStream stream(fd);
+//	GzipOutputStream zip_stream(&stream);
+	
+//	if ( ! harvest.SerializeToZeroCopyStream(&zip_stream) )
+//	{
+//		printf("Failed to write.\n");
+//	}
+	
+//	zip_stream.Close();
+//	stream.Close();
+//	close(fd);
+	
+//	harvest.Clear();
+//	google::protobuf::ShutdownProtobufLibrary();
 }
 
 void HarvestIO::writeMfa(std::ostream &out) const

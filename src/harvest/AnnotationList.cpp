@@ -15,6 +15,53 @@ void AnnotationList::clear()
 	annotations.clear();
 }
 
+void AnnotationList::initFromCapnp(const capnp::Harvest::Reader & harvestReader, const ReferenceList & referenceList)
+{
+	int sequence = 0;
+	int offset = 0;
+	
+	auto annotationListReader = harvestReader.getAnnotationList();
+	auto annotationsReader = annotationListReader.getAnnotations();
+	
+	annotations.resize(0);
+	annotations.resize(annotationsReader.size());
+	
+	for ( int i = 0; i < annotations.size(); i++ )
+	{
+		Annotation & annotation = annotations.at(i);
+		
+		auto annotationReader = annotationsReader[i];
+		
+		while ( sequence < annotationReader.getSequence() && sequence < referenceList.getReferenceCount() )
+		{
+			offset += referenceList.getReference(sequence).sequence.length();
+			sequence++;
+		}
+		
+		if ( sequence == referenceList.getReferenceCount() )
+		{
+			offset = 0;
+			//printf("ERROR: sequence %d not found in reference or annotation out of order in protobuf.\n", msgAnn.sequence());
+			//exit(1);
+		}
+		
+		auto regionsReader = annotationReader.getRegions();
+		auto regionReader = regionsReader[0];
+		
+		// TODO: multiple regions
+		
+		annotation.start = regionReader.getStart() + offset;
+		annotation.end = regionReader.getEnd() + offset;
+		annotation.reverse = annotationReader.getReverse();
+		annotation.name = annotationReader.getName();
+		annotation.locus = annotationReader.getLocus();
+		annotation.description = annotationReader.getDescription();
+		annotation.feature = annotationReader.getFeature();
+		
+		//printf("%s\t%d\t%d\t%d\t%c\t%s\t%s\n", annotation.locus.c_str(), msgAnn.sequence(), annotation.start, annotation.end, annotation.reverse ? '-' : '+', annotation.name.c_str(), annotation.description.c_str());
+	}
+}
+
 void AnnotationList::initFromGenbank(const char * file, ReferenceList & referenceList, bool useSeq)
 {
 	ifstream in(file);
@@ -313,6 +360,45 @@ void AnnotationList::initFromProtocolBuffer(const Harvest::AnnotationList & msg,
 		annotation.feature = msgAnn.feature();
 		
 		//printf("%s\t%d\t%d\t%d\t%c\t%s\t%s\n", annotation.locus.c_str(), msgAnn.sequence(), annotation.start, annotation.end, annotation.reverse ? '-' : '+', annotation.name.c_str(), annotation.description.c_str());
+	}
+}
+
+void AnnotationList::writeToCapnp(capnp::Harvest::Builder & harvestBuilder, const ReferenceList & referenceList) const
+{
+	int sequence = 0;
+	int offset = 0;
+	int offsetEnd = referenceList.getReference(0).sequence.length();
+	
+	auto annotationListBuilder = harvestBuilder.initAnnotationList();
+	auto annotationsBuilder = annotationListBuilder.initAnnotations(annotations.size());
+	
+	for ( int i = 0; i < annotations.size(); i++ )
+	{
+		const Annotation & annotation = annotations.at(i);
+		
+		auto annotationBuilder = annotationsBuilder[i];
+		
+		while ( annotation.start >= offsetEnd && sequence < referenceList.getReferenceCount() - 1 )
+		{
+			sequence++;
+			offset = offsetEnd;
+			offsetEnd += referenceList.getReference(sequence).sequence.length();
+		}
+		
+		annotationBuilder.setSequence(sequence);
+		
+		// TODO: multiple regions?
+		//
+		auto regionsBuilder = annotationBuilder.initRegions(1);
+		auto regionBuilder = regionsBuilder[0];
+		
+		regionBuilder.setStart(annotation.start - offset);
+		regionBuilder.setEnd(annotation.end - offset);
+		annotationBuilder.setReverse(annotation.reverse);
+		annotationBuilder.setName(annotation.name);
+		annotationBuilder.setLocus(annotation.locus);
+		annotationBuilder.setDescription(annotation.description);
+		annotationBuilder.setFeature(annotation.feature);
 	}
 }
 

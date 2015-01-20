@@ -7,6 +7,7 @@
 #ifndef TrackList_h
 #define TrackList_h
 
+#include "harvest/capnp/harvest.capnp.h"
 #include "harvest/pb/harvest.pb.h"
 
 #include <stdexcept>
@@ -64,10 +65,12 @@ public:
 	int getTrackIndexByFile(const std::string & file) const;
 	Track & getTrackMutable(int index);
 	int getTrackReference() const;
+	void initFromCapnp(const capnp::Harvest::Reader & harvestReader);
 	void initFromProtocolBuffer(const Harvest::TrackList & msg);
 	void setTrackReference(int trackReferenceNew);
 	void setTracksByFile();
-	void writeToProtocolBuffer(Harvest * msg);
+	void writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const;
+	void writeToProtocolBuffer(Harvest * msg) const;
 	
 private:
 	

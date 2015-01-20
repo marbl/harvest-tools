@@ -13,6 +13,7 @@
 #include "harvest/TrackList.h"
 #include <stdexcept>
 
+#include "harvest/capnp/harvest.capnp.h"
 #include "harvest/pb/harvest.pb.h"
 
 class VariantList;
@@ -66,11 +67,13 @@ public:
 	const Lcb & getLcb(int index) const;
         double getCoreSize() const;
 	int getLcbCount() const;
+	void initFromCapnp(const capnp::Harvest::Reader & harvestReader);
 	void initFromMaf(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList, const char * referenceFileName);
 	void initFromMfa(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList);
 	void initFromProtocolBuffer(const Harvest::Alignment & msgAlignment);
 	void initFromXmfa(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList);
 	void initWithSingleLcb(const ReferenceList & referenceList, const TrackList & trackList);
+	void writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const;
 	void writeToMfa(std::ostream & out, const ReferenceList & referenceList, const TrackList & trackList, const VariantList & variantList) const;
 	void writeToProtocolBuffer(Harvest * msg) const;
 	void writeToXmfa(std::ostream & out, const ReferenceList & referenceList, const TrackList & trackList, const VariantList & variantList) const;

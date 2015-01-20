@@ -1,16 +1,16 @@
 AC_INIT(src/harvest/harvest.cpp)
 
 AC_ARG_WITH(protobuf, [  --with-protobuf=<path/to/protobuf>     Protocol Buffers install dir (default: /usr/local/)])
-AC_ARG_WITH(flatbuffers, [  --with-flatbuffers=<path/to/protobuf>     FlatBuffers install dir (default: /usr/local/)])
+AC_ARG_WITH(flatbuffers, [  --with-capnp=<path/to/capnp>     Cap'n Proto install dir (default: /usr/local/)])
 
 if test "$with_protobuf" == ""
 then
 	with_protobuf=/usr/local/
 fi
 
-if test "$with_flatbuffers" == ""
+if test "$with_capnp" == ""
 then
-	with_flatbuffers=/usr/local/
+	with_capnp=/usr/local/
 fi
 
 AC_LANG(C++)
@@ -22,11 +22,11 @@ then
 	AC_MSG_ERROR([Protocol Buffer compiler (protoc) not found.])
 fi
 
-AC_CHECK_PROG(flatbuffersCheck, flatc, "yes", "no", $with_flatbuffers/bin)
+AC_CHECK_PROG(capnpCheck, capnp, "yes", "no", $with_capnp/bin)
 
-if test "$flatbuffersCheck" != "yes"
+if test "$capnpCheck" != "yes"
 then
-	AC_MSG_ERROR([FlatBuffers compiler (flatc) not found.])
+	AC_MSG_ERROR([Cap'n Proto compiler (capnp) not found.])
 fi
 
 CPPFLAGS="-I$with_protobuf/include -I$with_flatbuffers/include"
@@ -38,11 +38,11 @@ then
 	AC_MSG_ERROR([Protocol Buffers headers not found.])
 fi
 
-AC_CHECK_HEADER(flatbuffers/flatbuffers.h, [result=1], [result=0])
+AC_CHECK_HEADER(capnp/serialize.h, [result=1], [result=0])
 
 if test $result == 0
 then
-echo	AC_MSG_ERROR([FlatBuffers headers not found.])
+	AC_MSG_ERROR([Cap'n Proto headers not found.])
 fi
 
 AC_CHECK_HEADER(zlib.h, [result=1], [result=0])
@@ -53,6 +53,6 @@ then
 fi
 
 AC_SUBST(protobuf, $with_protobuf)
-AC_SUBST(flatbuffers, $with_protobuf)
+AC_SUBST(capnp, $with_capnp)
 
 AC_OUTPUT(Makefile)

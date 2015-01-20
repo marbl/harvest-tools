@@ -12,6 +12,7 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "harvest/capnp/harvest.capnp.h"
 #include "harvest/pb/harvest.pb.h"
 
 static const int undef = -1;
@@ -64,8 +65,10 @@ public:
 	int getReferenceSequenceFromConcatenated(long int position) const;
 	int getReferenceSequenceFromGi(long int gi) const;
 	int getReferenceSequenceFromName(std::string name) const;
+	void initFromCapnp(const capnp::Harvest::Reader & harvestReader);
 	void initFromFasta(const char * file);
 	void initFromProtocolBuffer(const Harvest::Reference & msg);
+	void writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const;
 	void writeToFasta(std::ostream & out) const;
 	void writeToProtocolBuffer(Harvest * msg) const;
 	

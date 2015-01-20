@@ -96,6 +96,40 @@ void LcbList::clear()
 	lcbs.clear();
 }
 
+void LcbList::initFromCapnp(const capnp::Harvest::Reader & harvestReader)
+{
+	auto lcbListReader = harvestReader.getLcbList();
+	auto lcbsReader = lcbListReader.getLcbs();
+	
+	lcbs.resize(lcbsReader.size());
+	
+	for ( int i = 0; i < lcbsReader.size(); i++ )
+	{
+		Lcb & lcb = lcbs[i];
+		auto lcbReader = lcbsReader[i];
+		
+		lcb.sequence = lcbReader.getSequence();
+		lcb.position = lcbReader.getPosition();
+		lcb.length = lcbReader.getLength();
+		lcb.concordance = lcbReader.getConcordance();
+		
+		auto regionsReader = lcbReader.getRegions();
+		lcb.regions.resize(regionsReader.size());
+		
+		for ( int j = 0; j < regionsReader.size(); j++ )
+		{
+			Region & region = lcb.regions[j];
+			auto regionReader = regionsReader[j];
+			
+			// TODO: track id?
+			
+			region.position = regionReader.getPosition();
+			region.length = regionReader.getLength();
+			region.reverse = regionReader.getReverse();
+		}
+	}
+}
+
 void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, TrackList * trackList, PhylogenyTree * phylogenyTree, VariantList * variantList, const char * referenceFileName)
 {
 	lcbs.resize(0);
@@ -970,6 +1004,38 @@ void LcbList::initWithSingleLcb(const ReferenceList & referenceList, const Track
 		region->position = 0;
 		region->length = totalLength;
 		region->reverse = false;
+	}
+}
+
+void LcbList::writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const
+{
+	auto lcbListBuilder = harvestBuilder.initLcbList();
+	auto lcbsBuilder = lcbListBuilder.initLcbs(lcbs.size());
+	
+	for ( int i = 0; i < lcbs.size(); i++ )
+	{
+		auto lcbBuilder = lcbsBuilder[i];
+		const LcbList::Lcb & lcb = lcbs.at(i);
+		
+		lcbBuilder.setSequence(lcb.sequence);
+		lcbBuilder.setPosition(lcb.position);
+		lcbBuilder.setLength(lcb.length);
+		lcbBuilder.setConcordance(lcb.concordance);
+		
+		auto regionsBuilder = lcbBuilder.initRegions(lcb.regions.size());
+		
+		for ( int j = 0; j < lcb.regions.size(); j++ )
+		{
+			// TODO: empty tracks?
+			
+			auto regionBuilder = regionsBuilder[j];
+			const LcbList::Region & region = lcb.regions.at(j);
+			
+			regionBuilder.setTrack(j);
+			regionBuilder.setPosition(region.position);
+			regionBuilder.setLength(region.length);
+			regionBuilder.setReverse(region.reverse);
+		}
 	}
 }
 

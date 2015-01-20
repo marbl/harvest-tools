@@ -1,4 +1,4 @@
-flags=-Isrc -I@protobuf@/include -I@flatbuffers@/include
+flags=-Isrc -I@protobuf@/include -I@capnp@/include
 
 UNAME_S=$(shell uname -s)
 
@@ -18,18 +18,18 @@ SOURCES=\
 	src/harvest/TrackList.cpp \
 	src/harvest/VariantList.cpp \
 	
-OBJECTS=$(SOURCES:.cpp=.o) src/harvest/pb/harvest.pb.o
+OBJECTS=$(SOURCES:.cpp=.o) src/harvest/pb/harvest.pb.o src/harvest/capnp/harvest.capnp.o
 
 all : harvesttools libharvest.a
 
 harvesttools : $(OBJECTS) libharvest.a
-	gcc ${flags} -o harvesttools $(OBJECTS) libharvest.a @protobuf@/lib/libprotobuf.a -lstdc++ -lz -lm -lpthread
+	gcc ${flags} -o harvesttools $(OBJECTS) libharvest.a @protobuf@/lib/libprotobuf.a @capnp@/lib/libcapnp.a @capnp@/lib/libkj.a -lstdc++ -lz -lm -lpthread
 
 libharvest.a : $(OBJECTS)
 	ar -cr libharvest.a $(OBJECTS)
 	ranlib libharvest.a
 
-%.o : %.cpp src/harvest/pb/harvest.pb.h src/harvest/fb/harvest_generated.h
+.cpp.o : src/harvest/pb/harvest.pb.h src/harvest/capnp/harvest.capnp.h
 	gcc ${flags} -c $< -o $@
 
 src/harvest/pb/harvest.pb.o : src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h
@@ -38,19 +38,24 @@ src/harvest/pb/harvest.pb.o : src/harvest/pb/harvest.pb.cc src/harvest/pb/harves
 src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h : src/harvest/pb/harvest.proto
 	cd src; @protobuf@/bin/protoc --cpp_out . harvest/pb/harvest.proto
 
-src/harvest/fb/harvest_generated.h : src/harvest/fb/harvest.fbs
-	cd src/harvest/fb;@flatbuffers@/bin/flatc -c -b harvest.fbs
+src/harvest/capnp/harvest.capnp.o : src/harvest/capnp/harvest.capnp.c++ src/harvest/capnp/harvest.capnp.h
+	gcc ${flags} -c src/harvest/capnp/harvest.capnp.c++ -o src/harvest/capnp/harvest.capnp.o
+	
+src/harvest/capnp/harvest.capnp.c++ src/harvest/capnp/harvest.capnp.h : src/harvest/capnp/harvest.capnp
+	cd src/harvest/capnp;@capnp@/bin/capnp compile -oc++ harvest.capnp
 
 install : libharvest.a
 	mkdir -p @prefix@/bin/
 	mkdir -p @prefix@/lib/
 	mkdir -p @prefix@/include/
 	mkdir -p @prefix@/include/harvest
+	mkdir -p @prefix@/include/harvest/capnp
 	mkdir -p @prefix@/include/harvest/pb
 	ln -sf `pwd`/harvesttools @prefix@/bin/
 	ln -sf `pwd`/libharvest.a @prefix@/lib/
 	ln -sf `pwd`/src/harvest/exceptions.h @prefix@/include/harvest/
 	ln -sf `pwd`/src/harvest/HarvestIO.h @prefix@/include/harvest/
+	ln -sf `pwd`/src/harvest/capnp/harvest.capnp.h @prefix@/include/harvest/capnp/
 	ln -sf `pwd`/src/harvest/pb/harvest.pb.h @prefix@/include/harvest/pb/
 	ln -sf `pwd`/src/harvest/ReferenceList.h @prefix@/include/harvest/
 	ln -sf `pwd`/src/harvest/AnnotationList.h @prefix@/include/harvest/
@@ -65,6 +70,9 @@ clean :
 	-rm harvesttools
 	-rm libharvest.a
 	-rm src/harvest/*.o
+	-rm src/harvest/capnp/*.o
+	-rm src/harvest/capnp/*.c++
+	-rm src/harvest/capnp/*.h
 	-rm src/harvest/pb/*.o
 	-rm src/harvest/pb/*.cc
 	-rm src/harvest/pb/*.h

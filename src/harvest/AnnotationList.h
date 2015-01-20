@@ -11,6 +11,7 @@
 #include <vector>
 #include <stdexcept>
 
+#include "harvest/capnp/harvest.capnp.h"
 #include "harvest/pb/harvest.pb.h"
 #include "harvest/ReferenceList.h"
 
@@ -60,8 +61,10 @@ public:
 	void clear();
 	int getAnnotationCount() const;
 	const Annotation & getAnnotation(int index) const;
+	void initFromCapnp(const capnp::Harvest::Reader & harvestReader, const ReferenceList & referenceList);
 	void initFromGenbank(const char * file, ReferenceList & referenceList, bool useSeq);
 	void initFromProtocolBuffer(const Harvest::AnnotationList & msg, const ReferenceList & referenceList);
+	void writeToCapnp(capnp::Harvest::Builder & harvestBuilder, const ReferenceList & referenceList) const;
 	void writeToProtocolBuffer(Harvest * msg, const ReferenceList & referenceList) const;
 	
 private:

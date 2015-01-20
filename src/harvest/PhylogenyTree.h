@@ -10,6 +10,7 @@
 #include <vector>
 #include <iostream>
 
+#include "harvest/capnp/harvest.capnp.h"
 #include "harvest/pb/harvest.pb.h"
 #include "harvest/PhylogenyTreeNode.h"
 #include "harvest/TrackList.h"
@@ -26,6 +27,7 @@ public:
 	void getLeafIds(std::vector<int> & ids) const;
 	double getMult() const;
 	int getNodeCount() const;
+	void initFromCapnp(const capnp::Harvest::Reader & harvestReader);
 	void initFromNewick(const char * file, TrackList * trackList);
 	void initFromProtocolBuffer(const Harvest::Tree & msg);
 	float leafDistance(int leaf1, int leaf2) const;
@@ -33,6 +35,7 @@ public:
 	void setMult(double multNew);
 	void setOutgroup(const PhylogenyTreeNode * node);
 	void setTrackIndeces(int * trackIndecesNew);
+	void writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const;
 	void writeToNewick(std::ostream &out, const TrackList & trackList, bool useMult) const;
 	void writeToProtocolBuffer(Harvest * msg) const;
 	

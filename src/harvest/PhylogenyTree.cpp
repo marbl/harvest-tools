@@ -51,6 +51,29 @@ void PhylogenyTree::init()
 	root->getLeaves(leaves);
 }
 
+void PhylogenyTree::initFromCapnp(const capnp::Harvest::Reader & harvestReader)
+{
+	if ( root )
+	{
+		delete root;
+	}
+	
+	int leaf = 0;
+	auto treeReader = harvestReader.getTree();
+	root = new PhylogenyTreeNode(treeReader.getRoot());
+	
+	if ( treeReader.getMultiplier() )
+	{
+		mult = treeReader.getMultiplier();
+	}
+	else
+	{
+		mult = 1.0;
+	}
+	
+	init();
+}
+
 void PhylogenyTree::initFromNewick(const char * file, TrackList * trackList)
 {
 	if ( root )
@@ -255,6 +278,14 @@ void PhylogenyTree::reroot(const PhylogenyTreeNode * rootNew, float distance, bo
 	//root->setAlignDist(root->getDistanceMax(), 0);
 }
 
+void PhylogenyTree::writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const
+{
+	auto treeBuilder = harvestBuilder.initTree();
+	treeBuilder.setMultiplier(mult);
+	auto rootBuilder = treeBuilder.initRoot();
+	root->writeToCapnp(rootBuilder);
+}
+
 void PhylogenyTree::writeToNewick(std::ostream &out, const TrackList & trackList, bool useMult) const
 {
 	root->writeToNewick(out, trackList, useMult ? mult : 1);
@@ -263,8 +294,8 @@ void PhylogenyTree::writeToNewick(std::ostream &out, const TrackList & trackList
 
 void PhylogenyTree::writeToProtocolBuffer(Harvest * msg) const
 {
-	Harvest::Tree * msgNode = msg->mutable_tree();
+	Harvest::Tree * msgTree = msg->mutable_tree();
 	//save multiplier value to protobuf
-	msgNode->set_multiplier(mult);
-	root->writeToProtocolBuffer(msgNode->mutable_root());
+	msgTree->set_multiplier(mult);
+	root->writeToProtocolBuffer(msgTree->mutable_root());
 }

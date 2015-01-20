@@ -47,6 +47,46 @@ int TrackList::getTrackIndexByFile(const string & file) const
 	}
 }
 
+void TrackList::initFromCapnp(const capnp::Harvest::Reader & harvestReader)
+{
+	auto trackListReader = harvestReader.getTrackList();
+	auto tracksReader = trackListReader.getTracks();
+	
+	tracks.resize(tracksReader.size());
+	
+	for ( int i = 0; i < tracks.size(); i++ )
+	{
+		auto trackReader = tracksReader[i];
+		
+		if ( trackReader.hasFile() )
+		{
+			tracks[i].file = trackReader.getFile();
+		}
+		
+		if ( trackReader.hasName() )
+		{
+			tracks[i].name = trackReader.getName();
+		}
+		
+		//if ( trackReader.hasType() )
+		{
+			tracks[i].type = (TrackType)trackReader.getType();
+		}
+		
+		//if ( trackReader.hasSize() )
+		{
+			tracks[i].size = trackReader.getSize();
+		}
+	}
+	
+	setTracksByFile();
+	
+	//if ( trackListReader.hasVariantReference() )
+	{
+		trackReference = trackListReader.getVariantReference();
+	}
+}
+
 void TrackList::initFromProtocolBuffer(const Harvest::TrackList & msg)
 {
 	tracks.resize(msg.tracks_size());
@@ -90,7 +130,41 @@ void TrackList::setTracksByFile()
 	}
 }
 
-void TrackList::writeToProtocolBuffer(Harvest * msg)
+void TrackList::writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const
+{
+	auto trackListBuilder = harvestBuilder.initTrackList();
+	auto tracksBuilder = trackListBuilder.initTracks(tracks.size());
+	
+	for ( int i = 0; i < tracks.size(); i++ )
+	{
+		const Track & track = tracks[i];
+		auto trackBuilder = tracksBuilder[i];
+		
+		if ( track.file != "" )
+		{
+			trackBuilder.setFile(track.file);
+		}
+		
+		if ( track.name != "" )
+		{
+			trackBuilder.setName(track.name);
+		}
+		
+		if ( track.size != 0 )
+		{
+			trackBuilder.setSize(track.size);
+		}
+		
+		if ( track.type != NONE )
+		{
+			trackBuilder.setType((capnp::Harvest::TrackList::Track::TrackType)track.type);
+		}
+	}
+	
+	trackListBuilder.setVariantReference(trackReference);
+}
+
+void TrackList::writeToProtocolBuffer(Harvest * msg) const
 {
 	for ( int i = 0; i < tracks.size(); i++ )
 	{

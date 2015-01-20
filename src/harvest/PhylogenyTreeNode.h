@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <vector>
+#include "harvest/capnp/harvest.capnp.h"
 #include "harvest/pb/harvest.pb.h"
 #include "harvest/TrackList.h"
 
@@ -16,6 +17,7 @@ class PhylogenyTreeNode
 {
 public:
 	
+	PhylogenyTreeNode(const capnp::Harvest::Tree::Node::Reader & nodeReader, PhylogenyTreeNode * parent = 0);
 	PhylogenyTreeNode(const Harvest::Tree::Node & msgNode, PhylogenyTreeNode * parent = 0);
 	PhylogenyTreeNode(char *& token, TrackList * trackList, bool useNames, PhylogenyTreeNode * parent = 0);
 	PhylogenyTreeNode(PhylogenyTreeNode * parent, PhylogenyTreeNode * child); // for edge bisection
@@ -43,6 +45,7 @@ public:
 	void setParent(PhylogenyTreeNode * parentNew, float distanceNew);
 	void setTrackId(int trackIdNew);
 	void swapSiblings();
+	void writeToCapnp(capnp::Harvest::Tree::Node::Builder & nodeBuilder) const;
 	void writeToNewick(std::ostream &out, const TrackList & trackList, const double mult = 1.0) const;
 	void writeToProtocolBuffer(Harvest::Tree::Node * msgNode) const;
 	

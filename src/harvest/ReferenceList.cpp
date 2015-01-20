@@ -94,6 +94,24 @@ int ReferenceList::getReferenceSequenceFromName(string name) const
 	return undef;
 }
 
+void ReferenceList::initFromCapnp(const capnp::Harvest::Reader & harvestReader)
+{
+	auto referenceListReader = harvestReader.getReferenceList();
+	auto referencesReader = referenceListReader.getReferences();
+	
+	references.resize(0);
+	references.resize(referencesReader.size());
+	
+	for ( int i = 0; i < references.size(); i++ )
+	{
+		auto referenceReader = referencesReader[i];
+		
+		references[i].name = parseNameFromTag(referenceReader.getTag());
+		references[i].description = parseDescriptionFromTag(referenceReader.getTag());
+		references[i].sequence = referenceReader.getSequence();
+	}
+}
+
 void ReferenceList::initFromFasta(const char * file)
 {
 	ifstream in(file);
@@ -138,6 +156,29 @@ void ReferenceList::initFromProtocolBuffer(const Harvest::Reference & msg)
 		references[i].name = parseNameFromTag(msg.references(i).tag());
 		references[i].description = parseDescriptionFromTag(msg.references(i).tag());
 		references[i].sequence = msg.references(i).sequence();
+	}
+}
+
+void ReferenceList::writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const
+{
+	auto referenceListBuilder = harvestBuilder.initReferenceList();
+	auto referencesBuilder = referenceListBuilder.initReferences(references.size());
+	
+	for ( int i = 0; i < references.size(); i++ )
+	{
+		auto referenceBuilder = referencesBuilder[i];
+		const Reference & reference = references.at(i);
+		
+		string tag = reference.name;
+		
+		if ( reference.description.length() )
+		{
+			tag.append(" ");
+			tag.append(reference.description);
+		}
+		
+		referenceBuilder.setTag(tag);
+		referenceBuilder.setSequence(reference.sequence);
 	}
 }
 

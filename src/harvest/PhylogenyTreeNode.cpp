@@ -10,6 +10,25 @@
 
 using namespace::std;
 
+PhylogenyTreeNode::PhylogenyTreeNode(const capnp::Harvest::Tree::Node::Reader & nodeReader, PhylogenyTreeNode * parent)
+{
+	// load from capnp
+	
+	this->parent = parent;
+	
+	auto childrenReader = nodeReader.getChildren();
+	children.resize(childrenReader.size());
+	
+	trackId = nodeReader.getTrack();
+	distance = nodeReader.getBranchLength();
+	bootstrap = nodeReader.getBootstrap();
+	
+	for ( int i = 0; i < children.size(); i++ )
+	{
+		children[i] = new PhylogenyTreeNode(childrenReader[i], this);
+	}
+}
+
 PhylogenyTreeNode::PhylogenyTreeNode(const Harvest::Tree::Node & msgNode, PhylogenyTreeNode * parent)
 {
 	// load from protobuf
@@ -25,8 +44,6 @@ PhylogenyTreeNode::PhylogenyTreeNode(const Harvest::Tree::Node & msgNode, Phylog
 	{
 		children[i] = new PhylogenyTreeNode(msgNode.children(i), this);
 	}
-	
-//	collapse = false;
 }
 
 PhylogenyTreeNode::PhylogenyTreeNode(char *& token, TrackList * trackList, bool useNames, PhylogenyTreeNode * parent)
@@ -320,6 +337,31 @@ void PhylogenyTreeNode::swapSiblings()
 	PhylogenyTreeNode * temp = children[0];
 	children[0] = children[1];
 	children[1] = temp;
+}
+
+void PhylogenyTreeNode::writeToCapnp(capnp::Harvest::Tree::Node::Builder & nodeBuilder) const
+{
+	if ( children.size() )
+	{
+		auto childrenBuilder = nodeBuilder.initChildren(children.size());
+		
+		for ( int i = 0; i < children.size(); i++ )
+		{
+			auto childBuilder = childrenBuilder[i];
+			children[i]->writeToCapnp(childBuilder);
+		}
+		
+		if ( bootstrap != 0 )
+		{
+			nodeBuilder.setBootstrap(bootstrap);
+		}
+	}
+	else
+	{
+		nodeBuilder.setTrack(trackId);
+	}
+	
+	nodeBuilder.setBranchLength(distance);
 }
 
 void PhylogenyTreeNode::writeToNewick(std::ostream &out, const TrackList & trackList, const double mult) const

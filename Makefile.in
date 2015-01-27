@@ -1,9 +1,11 @@
-flags=-std=c++11 -include src/harvest/memcpyLink.h -L. -static-libstdc++ -Isrc -I@protobuf@/include -I@capnp@/include
+flags=-std=c++11 -Isrc -I@protobuf@/include -I@capnp@/include
 
 UNAME_S=$(shell uname -s)
 
 ifeq ($(UNAME_S),Darwin)
 	flags += -mmacosx-version-min=10.7 -stdlib=libc++
+else
+	flags += -include src/harvest/memcpyLink.h -L. -static-libstdc++  -Wl,--wrap=memcpy
 endif
 
 SOURCES=\
@@ -23,7 +25,7 @@ OBJECTS=$(SOURCES:.cpp=.o) src/harvest/pb/harvest.pb.o src/harvest/capnp/harvest
 all : harvesttools libharvest.a
 
 harvesttools : libharvest.a
-	gcc ${flags} -Wl,--wrap=memcpy -o harvesttools src/harvest/memcpyWrap.o libharvest.a @protobuf@/lib/libprotobuf.a @capnp@/lib/libcapnp.a @capnp@/lib/libkj.a -lstdc++ -lz -lm -lpthread
+	gcc ${flags} -o harvesttools src/harvest/memcpyWrap.o libharvest.a @protobuf@/lib/libprotobuf.a @capnp@/lib/libcapnp.a @capnp@/lib/libkj.a -lstdc++ -lz -lm -lpthread
 
 libharvest.a : $(OBJECTS)
 	ar -cr libharvest.a $(OBJECTS)
@@ -33,7 +35,7 @@ libharvest.a : $(OBJECTS)
 	gcc ${flags} -c $< -o $@
 
 src/harvest/memcpyWrap.o : src/harvest/memcpyWrap.c
-	gcc ${flags} -c src/harvest/memcpyWrap.c -o src/harvest/memcpyWrap.o
+	gcc -c src/harvest/memcpyWrap.c -o src/harvest/memcpyWrap.o
 
 src/harvest/pb/harvest.pb.o : src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h
 	gcc ${flags} -c src/harvest/pb/harvest.pb.cc -o src/harvest/pb/harvest.pb.o

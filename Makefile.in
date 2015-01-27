@@ -1,9 +1,9 @@
-flags=-Isrc -I@protobuf@/include -I@capnp@/include
+flags=-std=c++11 -include src/harvest/memcpyLink.h -L. -static-libstdc++ -Isrc -I@protobuf@/include -I@capnp@/include
 
 UNAME_S=$(shell uname -s)
 
 ifeq ($(UNAME_S),Darwin)
-	flags += -mmacosx-version-min=10.7 -std=c++11 -stdlib=libc++
+	flags += -mmacosx-version-min=10.7 -stdlib=libc++
 endif
 
 SOURCES=\
@@ -17,20 +17,23 @@ SOURCES=\
 	src/harvest/ReferenceList.cpp \
 	src/harvest/TrackList.cpp \
 	src/harvest/VariantList.cpp \
-	
-OBJECTS=$(SOURCES:.cpp=.o) src/harvest/pb/harvest.pb.o src/harvest/capnp/harvest.capnp.o
+
+OBJECTS=$(SOURCES:.cpp=.o) src/harvest/pb/harvest.pb.o src/harvest/capnp/harvest.capnp.o src/harvest/memcpyWrap.o
 
 all : harvesttools libharvest.a
 
-harvesttools : $(OBJECTS) libharvest.a
-	gcc ${flags} -o harvesttools $(OBJECTS) libharvest.a @protobuf@/lib/libprotobuf.a @capnp@/lib/libcapnp.a @capnp@/lib/libkj.a -lstdc++ -lz -lm -lpthread
+harvesttools : libharvest.a
+	gcc ${flags} -Wl,--wrap=memcpy -o harvesttools src/harvest/memcpyWrap.o libharvest.a @protobuf@/lib/libprotobuf.a @capnp@/lib/libcapnp.a @capnp@/lib/libkj.a -lstdc++ -lz -lm -lpthread
 
 libharvest.a : $(OBJECTS)
 	ar -cr libharvest.a $(OBJECTS)
 	ranlib libharvest.a
 
-.cpp.o : src/harvest/pb/harvest.pb.h src/harvest/capnp/harvest.capnp.h
+%.o : %.cpp 
 	gcc ${flags} -c $< -o $@
+
+src/harvest/memcpyWrap.o : src/harvest/memcpyWrap.c
+	gcc ${flags} -c src/harvest/memcpyWrap.c -o src/harvest/memcpyWrap.o
 
 src/harvest/pb/harvest.pb.o : src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h
 	gcc ${flags} -c src/harvest/pb/harvest.pb.cc -o src/harvest/pb/harvest.pb.o
@@ -40,7 +43,7 @@ src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h : src/harvest/pb/harves
 
 src/harvest/capnp/harvest.capnp.o : src/harvest/capnp/harvest.capnp.c++ src/harvest/capnp/harvest.capnp.h
 	gcc ${flags} -c src/harvest/capnp/harvest.capnp.c++ -o src/harvest/capnp/harvest.capnp.o
-	
+
 src/harvest/capnp/harvest.capnp.c++ src/harvest/capnp/harvest.capnp.h : src/harvest/capnp/harvest.capnp
 	cd src/harvest/capnp;@capnp@/bin/capnp compile -oc++ harvest.capnp
 

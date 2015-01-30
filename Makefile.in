@@ -1,11 +1,11 @@
-flags=-std=c++11 -Isrc -I@protobuf@/include -I@capnp@/include
+CXXFLAGS += -std=c++11 -Isrc -I@protobuf@/include -I@capnp@/include
 
 UNAME_S=$(shell uname -s)
 
 ifeq ($(UNAME_S),Darwin)
-	flags += -mmacosx-version-min=10.7 -stdlib=libc++
+	CXXFLAGS += -mmacosx-version-min=10.7 -stdlib=libc++
 else
-	flags += -include src/harvest/memcpyLink.h -L. -static-libstdc++  -Wl,--wrap=memcpy
+	CXXFLAGS += -include src/harvest/memcpyLink.h -L. -static-libstdc++  -Wl,--wrap=memcpy
 endif
 
 SOURCES=\
@@ -25,26 +25,28 @@ OBJECTS=$(SOURCES:.cpp=.o) src/harvest/pb/harvest.pb.o src/harvest/capnp/harvest
 all : harvesttools libharvest.a
 
 harvesttools : libharvest.a src/harvest/memcpyWrap.o
-	gcc ${flags} -o harvesttools src/harvest/memcpyWrap.o libharvest.a @protobuf@/lib/libprotobuf.a @capnp@/lib/libcapnp.a @capnp@/lib/libkj.a -lstdc++ -lz -lm -lpthread
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o harvesttools src/harvest/memcpyWrap.o libharvest.a @protobuf@/lib/libprotobuf.a @capnp@/lib/libcapnp.a @capnp@/lib/libkj.a -lstdc++ -lz -lm -lpthread
 
 libharvest.a : $(OBJECTS)
 	ar -cr libharvest.a $(OBJECTS)
 	ranlib libharvest.a
 
-%.o : %.cpp 
-	gcc ${flags} -c $< -o $@
+.SUFFIXES :
+
+%.o : %.cpp src/harvest/pb/harvest.pb.h src/harvest/capnp/harvest.capnp.h
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
+
+%.o : %.c++
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
+
+%.o : %.cc
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
 src/harvest/memcpyWrap.o : src/harvest/memcpyWrap.c
-	gcc ${flags} -c src/harvest/memcpyWrap.c -o src/harvest/memcpyWrap.o
-
-src/harvest/pb/harvest.pb.o : src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h
-	gcc ${flags} -c src/harvest/pb/harvest.pb.cc -o src/harvest/pb/harvest.pb.o
+	$(CC) -include src/harvest/memcpyLink.h -c -o $@ $<
 
 src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h : src/harvest/pb/harvest.proto
 	cd src; @protobuf@/bin/protoc --cpp_out . harvest/pb/harvest.proto
-
-src/harvest/capnp/harvest.capnp.o : src/harvest/capnp/harvest.capnp.c++ src/harvest/capnp/harvest.capnp.h
-	gcc ${flags} -c src/harvest/capnp/harvest.capnp.c++ -o src/harvest/capnp/harvest.capnp.o
 
 src/harvest/capnp/harvest.capnp.c++ src/harvest/capnp/harvest.capnp.h : src/harvest/capnp/harvest.capnp
 	cd src/harvest/capnp;@capnp@/bin/capnp compile -oc++ harvest.capnp

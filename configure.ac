@@ -29,7 +29,7 @@ then
 	AC_MSG_ERROR([Cap'n Proto compiler (capnp) not found.])
 fi
 
-CPPFLAGS="-I$with_protobuf/include -I$with_flatbuffers/include"
+CPPFLAGS="-I$with_protobuf/include -I$with_capnp/include -std=c++11"
 
 AC_CHECK_HEADER(google/protobuf/stubs/common.h, [result=1], [result=0])
 
@@ -38,7 +38,7 @@ then
 	AC_MSG_ERROR([Protocol Buffers headers not found.])
 fi
 
-AC_CHECK_HEADER(capnp/serialize.h, [result=1], [result=0])
+AC_CHECK_HEADER(capnp/common.h, [result=1], [result=0])
 
 if test $result == 0
 then

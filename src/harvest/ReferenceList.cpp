@@ -253,7 +253,7 @@ string parseDescriptionFromTag(string tag)
 	{
 		if ( tag[i] == ' ' )
 		{
-			return tag.substr(i);
+			return tag.substr(i + 1);
 			break;
 		}
 	}

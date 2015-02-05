@@ -6,6 +6,7 @@ ifeq ($(UNAME_S),Darwin)
 	CXXFLAGS += -mmacosx-version-min=10.7 -stdlib=libc++
 else
 	CXXFLAGS += -include src/harvest/memcpyLink.h -L. -static-libstdc++  -Wl,--wrap=memcpy
+	CFLAGS += -include src/harvest/memcpyLink.h
 endif
 
 SOURCES=\
@@ -43,7 +44,7 @@ libharvest.a : $(OBJECTS)
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
 src/harvest/memcpyWrap.o : src/harvest/memcpyWrap.c
-	$(CC) -include src/harvest/memcpyLink.h -c -o $@ $<
+	$(CC) -c -o $@ $<
 
 src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h : src/harvest/pb/harvest.proto
 	cd src; @protobuf@/bin/protoc --cpp_out . harvest/pb/harvest.proto

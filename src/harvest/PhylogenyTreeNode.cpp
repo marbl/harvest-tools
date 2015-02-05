@@ -80,9 +80,16 @@ PhylogenyTreeNode::PhylogenyTreeNode(char *& token, TrackList * trackList, bool 
 		{
 			if ( *token == ')' )
 			{
-				state = STATE_nameInternal;
-				valueStart = token + 1;
-				token++;
+				if ( parent )
+				{
+					state = STATE_nameInternal;
+					valueStart = token + 1;
+					token++;
+				}
+				else
+				{
+					state = STATE_end; // root should not have bootstrap or branch length
+				}
 			}
 			else if ( *token == ',' )
 			{
@@ -95,11 +102,7 @@ PhylogenyTreeNode::PhylogenyTreeNode(char *& token, TrackList * trackList, bool 
 		}
 		else if ( state == STATE_nameLeaf || state == STATE_nameInternal )
 		{
-			if ( *token == 0 )
-			{
-				state = STATE_end;
-			}
-			else if ( *token == ':' )
+			if ( *token == ':' )
 			{
 				if ( valueStart != token )
 				{
@@ -394,7 +397,11 @@ void PhylogenyTreeNode::writeToNewick(std::ostream &out, const TrackList & track
 	//by default, always use multiplier
 	//can be 1.0, or an adjusted value
 	//alternatively, this could be conditional based on the parameter, instead of using 1.0 vs non-1.0 values
-	out << ':' << distance * mult;
+	
+	if ( parent ) // root should not have branch length
+	{
+		out << ':' << distance * mult;
+	}
 }
 
 void PhylogenyTreeNode::writeToProtocolBuffer(Harvest::Tree::Node * msgNode) const

@@ -1,17 +1,11 @@
-![Travis-CI build status]
-(https://travis-ci.org/marbl/harvest-tools.svg?branch=master)
-
 HarvestTools is a part of the Harvest software suite and provides file
-conversion between Gingr files and various standard text formats. HarvestTools
-is normally distributed as a binary for OS X or Linux:
+conversion between Gingr files and various standard text formats (see
+[Harvest](http://harvest.readthedocs.org)).
 
-OSX: https://github.com/marbl/harvest-tools/releases/download/v1.0/harvesttools-OSX64.gz
-Linux: https://github.com/marbl/harvest-tools/releases/download/v1.0/harvesttools-Linux64.gz
+HarvestTools is normally distributed as a binary for OS X or Linux (see Harvest
+link above). However, the source is provided here for unique build environments
+or for development.
 
-However, the source is available for unique build environments or for development.
-
-Harvest information: https://github.com/marbl/harvest
-
-CITATION provides details on how to cite harvest-tools.
+CITATION provides details on how to cite HarvestTools.
 INSTALL.txt provides instructions for building from source and installing.
 LICENSE.txt provides licensing information.

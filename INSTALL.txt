@@ -4,13 +4,14 @@ Dependencies:
 -------------
    - Autoconf ( http://www.gnu.org/software/autoconf/ )
    - Protocol Buffers ( https://code.google.com/p/protobuf/ )
-   - Zlib ( http://www.zlib.net/ )
+   - Cap'n Proto ( https://capnproto.org/ )
+   - Zlib ( http://www.zlib.net/, included with OS X and most Linuxes )
 
 
 Steps:
 ------
    ./bootstrap.sh
-   ./configure [--prefix=...] [--with-protobuf=...]
+   ./configure [--prefix=...] [--with-protobuf=...]  [--with-capnp=...]
    make
    [sudo] make install
 
@@ -26,8 +27,12 @@ Products:
 
 Notes:
 ------
-When running ./configure, use --prefix to install somewhere other than
-/usr/local. Use --with-protobuf if the Protocol Buffer libraries are not
-in their default location (/usr/local). Zlib should be installed in a standard
-system location. Sudo will be necessary for 'make install' if write permission
-is not available in --prefix.
+* When running ./configure, use --prefix to install somewhere other than
+  /usr/local.
+* Sudo will be necessary for 'make install' if write permission
+  is not available in --prefix (e.g. by default).
+* Use --with-protobuf=...  or --with-capnp=... if the Protocol Buffer or Cap'n
+  Proto libraries are not in the default location (/usr/local). These should be
+  absolute paths and should not include "bin" or "lib".
+* If Zlib is not installed in a standard system location (it usually is),
+  CXXFLAGS and LDFLAGS will have to be modified before making.

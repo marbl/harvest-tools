@@ -1,7 +1,7 @@
 AC_INIT(src/harvest/harvest.cpp)
 
 AC_ARG_WITH(protobuf, [  --with-protobuf=<path/to/protobuf>     Protocol Buffers install dir (default: /usr/local/)])
-AC_ARG_WITH(flatbuffers, [  --with-capnp=<path/to/capnp>     Cap'n Proto install dir (default: /usr/local/)])
+AC_ARG_WITH(capnp, [  --with-capnp=<path/to/capnp>     Cap'n Proto install dir (default: /usr/local/)])
 
 if test "$with_protobuf" == ""
 then

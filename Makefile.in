@@ -44,7 +44,7 @@ libharvest.a : $(OBJECTS)
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
 src/harvest/memcpyWrap.o : src/harvest/memcpyWrap.c
-	$(CC) ($CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 src/harvest/pb/harvest.pb.cc src/harvest/pb/harvest.pb.h : src/harvest/pb/harvest.proto
 	cd src; @protobuf@/bin/protoc --cpp_out . harvest/pb/harvest.proto

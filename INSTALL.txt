@@ -20,9 +20,22 @@ Products:
 ---------
    - command line tool ( <prefix>/bin/harvest )
    - static library ( <prefix>/lib/libharvest.a )
-   - includes
-      - Harvest, Protocol Buffer message class ( <prefix>/include/harvest.pb.h )
-      - HarvestIO, Harvest wrapper with file IO ( <prefix>/include/HarvestIO.h )
+   - includes ( <prefix>/include/harvest/ )
+
+
+Deployment:
+-----------
+OSX
+  HarvestTools can be built on any OSX version starting with 10.7 (using
+  XCode >= 4.6), and the binary should work across the same range of versions,
+  regardless of the particular version it was built with.
+Linux
+  HarvestTools must be built with at least GCC 4.8 due to its c++11 dependency.
+  However, the resulting binary can run on Linux with older GCC libraries if
+  libstdc++ is linked statically. To do this, ensure that you have a statically
+  built library (libstdc++.a) and add "-static-libstdc++" to $CPPFLAGS before
+  running "make". You may also need to use "-L <dir>"in $CPPFLAGS to tell GCC
+  where to find libstdc++.a.
 
 
 Notes:

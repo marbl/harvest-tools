@@ -183,9 +183,14 @@ int main(int argc, const char * argv[])
 		cerr << "   ERROR: No sequence in Genbank file (" << e.file << ") and no other reference loaded.\n";
 		return 1;
 	}
-	catch ( const AnnotationList::NoGiException & e )
+	catch ( const AnnotationList::NoAccException & e )
 	{
-		cerr << "   ERROR: Genbank file (" << e.file << ") does not contain GI; cannot be matched to existing reference.\n";
+		cerr << "   ERROR: Genbank file (" << e.file << ") does not contain accession; cannot be matched to existing reference.\n";
+		return 1;
+	}
+	catch ( const ReferenceList::AccNotFoundException & e )
+	{
+		cerr << "   ERROR: Could not find a loaded reference with accession \"" << e.acc << "\"\n";
 		return 1;
 	}
 	

@@ -44,16 +44,16 @@ public:
 		std::string file;
 	};
 	
-	class NoGiException : public std::exception
+	class NoAccException : public std::exception
 	{
 	public:
 		
-		NoGiException(const std::string & fileNew)
+		NoAccException(const std::string & fileNew)
 		{
 			file = fileNew;
 		}
 		
-		virtual ~NoGiException() throw() {}
+		virtual ~NoAccException() throw() {}
 		
 		std::string file;
 	};

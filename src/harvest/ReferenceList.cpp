@@ -56,25 +56,19 @@ int ReferenceList::getReferenceSequenceFromConcatenated(long int position) const
 	return undef;
 }
 
-int ReferenceList::getReferenceSequenceFromGi(long int gi) const
+int ReferenceList::getReferenceSequenceFromAcc(const string & acc) const
 {
 	for ( int i = 0; i < references.size(); i++ )
 	{
-		size_t giToken = references.at(i).name.find("gi|");
+		size_t giToken = references.at(i).name.find(acc);
 		
 		if ( giToken != string::npos )
 		{
-			if ( gi == atol(references.at(i).name.c_str() + giToken + 3))
-			{
-				return i;
-			}
+			return i;
 		}
 	}
 	
-	char giString[1024];
-	sprintf(giString, "%ld", gi);
-	
-	throw GiNotFoundException(giString);
+	throw AccNotFoundException(acc);
 	
 	return undef;
 }

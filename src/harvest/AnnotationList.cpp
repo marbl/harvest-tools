@@ -114,12 +114,17 @@ void AnnotationList::initFromGenbank(const char * file, ReferenceList & referenc
 				}
 				while ( *token == ' ' );
 			}
-			else if ( ! useSeq && removePrefix(line, "VERSION") )
+			else if ( ! useSeq && (token = removePrefix(line, "VERSION")) )
 			{
-				if ( const char * giToken = strstr(line, " GI:") )
+				while ( *token == ' ' )
 				{
-					long int gi = atol(giToken + 4);
-					int sequence = referenceList.getReferenceSequenceFromGi(gi);
+					token++;
+				}
+				
+				if ( *token )
+				{
+					char * acc = strtok(token, " \t\n");
+					int sequence = referenceList.getReferenceSequenceFromAcc(acc);
 					
 					offset = 0;
 				
@@ -130,7 +135,7 @@ void AnnotationList::initFromGenbank(const char * file, ReferenceList & referenc
 				}
 				else
 				{
-					throw NoGiException(file);
+					throw NoAccException(file);
 				}
 			}
 			else if ( removePrefix(line, "FEATURES") )

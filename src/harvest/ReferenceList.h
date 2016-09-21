@@ -28,18 +28,18 @@ class ReferenceList
 {
 public:
 	
-	class GiNotFoundException : public std::exception
+	class AccNotFoundException : public std::exception
 	{
 	public:
 		
-		GiNotFoundException(const std::string & giNew)
+		AccNotFoundException(const std::string & accNew)
 		{
-			gi = giNew;
+			acc = accNew;
 		}
 		
-		virtual ~GiNotFoundException() throw() {}
+		virtual ~AccNotFoundException() throw() {}
 		
-		std::string gi;
+		std::string acc;
 	};
 	
 	class NameNotFoundException : public std::exception
@@ -63,7 +63,7 @@ public:
 	const Reference & getReference(int index) const;
 	int getReferenceCount() const;
 	int getReferenceSequenceFromConcatenated(long int position) const;
-	int getReferenceSequenceFromGi(long int gi) const;
+	int getReferenceSequenceFromAcc(const std::string & acc) const;
 	int getReferenceSequenceFromName(std::string name) const;
 	void initFromCapnp(const capnp::Harvest::Reader & harvestReader);
 	void initFromFasta(const char * file);

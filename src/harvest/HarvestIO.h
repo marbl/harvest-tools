@@ -44,6 +44,7 @@ public:
 	void writeFasta(std::ostream &out) const;
 	void writeHarvest(const char * file);
 	void writeMfa(std::ostream &out) const;
+	void writeFilteredMfa(std::ostream &out, std::ostream &out2) const;
 	void writeNewick(std::ostream &out, bool useMult = false) const;
 	void writeSnp(std::ostream &out, bool indels = false) const;
 	void writeVcf(std::ostream &out, bool indels = false) const;

@@ -75,6 +75,7 @@ public:
 	void initWithSingleLcb(const ReferenceList & referenceList, const TrackList & trackList);
 	void writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const;
 	void writeToMfa(std::ostream & out, const ReferenceList & referenceList, const TrackList & trackList, const VariantList & variantList) const;
+	void writeFilteredToMfa(std::ostream & out, std::ostream & out2, const ReferenceList & referenceList, const TrackList & trackList, const VariantList & variantList) const;
 	void writeToProtocolBuffer(Harvest * msg) const;
 	void writeToXmfa(std::ostream & out, const ReferenceList & referenceList, const TrackList & trackList, const VariantList & variantList) const;
 	

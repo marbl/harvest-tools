@@ -26,6 +26,8 @@ int main(int argc, const char * argv[])
 	const char * xmfa = 0;
 	const char * outFasta = 0;
 	const char * outMfa = 0;
+	const char * outMfaFiltered = 0;
+	const char * outMfaFilteredPositions = 0;
 	const char * outNewick = 0;
 	const char * outSnp = 0;
 	const char * outVcf = 0;
@@ -60,6 +62,7 @@ int main(int argc, const char * argv[])
 				case 'g': genbank.push_back(argv[++i]); break;
 				case 'h': help = true; break;
 				case 'i': input = argv[++i]; break;
+			        case 'I': outMfaFiltered = argv[++i]; outMfaFilteredPositions = "reference_positions.txt"; break;
 				case 'm': mfa = argv[++i]; break;
 				case 'M': outMfa = argv[++i]; break;
 				case 'n': newick = argv[++i]; break;
@@ -102,6 +105,7 @@ int main(int argc, const char * argv[])
 		cout << "   -a <MAF alignment input>" << endl;
 		cout << "   -m <multi-fasta alignment input>" << endl;
 		cout << "   -M <multi-fasta alignment output (concatenated LCBs)>" << endl;
+		cout << "   -I <multi-fasta alignment output (concatenated LCBs minus filtered SNPs)>" << endl;
 		cout << "   -n <Newick tree input>" << endl;
 		cout << "   -N <Newick tree output>" << endl;
 		cout << "   --midpoint-reroot (reroot the tree at its midpoint after loading)" << endl;
@@ -314,6 +318,27 @@ int main(int argc, const char * argv[])
 		}
 		
 		hio.writeMfa(*fp);
+	}
+
+	if ( outMfaFiltered )
+	{
+	  if (!quiet) cerr << "Writing " << outMfaFiltered << " and " << outMfaFilteredPositions << " ...\n";
+		
+		std::ostream* fp = &cout;
+		std::ostream* fp2 = &cout;
+		std::ofstream fout;
+		std::ofstream fout2;
+		
+		if (out1.compare(outMfaFiltered) != 0) 
+		{
+
+			fout.open(outMfaFiltered);
+			fout2.open(outMfaFilteredPositions);
+			fp = &fout;
+			fp2 = &fout2;
+		}
+		
+		hio.writeFilteredMfa(*fp, *fp2);
 	}
 
 	if ( outNewick )

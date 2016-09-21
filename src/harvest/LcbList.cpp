@@ -1144,6 +1144,127 @@ void LcbList::writeToMfa(ostream & out, const ReferenceList & referenceList, con
 		out << endl;
 	}
 }
+void LcbList::writeFilteredToMfa(ostream & out, ostream & out2, const ReferenceList & referenceList, const TrackList & trackList, const VariantList & variantList) const
+{
+	// now iterate over alignments
+	
+	int totrefgaps = 0;
+	
+	for ( int i = 0; i < trackList.getTrackCount(); i++)
+	{
+		int refend = 0;
+		int currvar = 0;
+		int width = 80;
+		int col = 0;
+		
+		out << '>' << trackList.getTrack(i).file << endl;
+		
+		for ( int j = 0; j < lcbs.size(); j++ )
+		{
+			const LcbList::Lcb & lcb = lcbs.at(j);
+			int refIndex = lcb.sequence;
+			int refstart = lcb.position;
+			const LcbList::Region & region = lcb.regions.at(i);
+			
+			int currpos = refstart;
+			int variantsSize = variantList.getVariantCount();
+			const VariantList::Variant * currvarref;
+			
+			if ( currvar < variantsSize )
+			{
+				currvarref = &variantList.getVariant(currvar);
+			
+				if ( currvarref->alleles[0] == '-' )
+				{
+					currpos--;
+				}
+			}
+			
+			while
+			(
+				currpos - refstart < lcb.regions.at(0).length ||
+				(
+					currvar < variantsSize &&
+					currvarref->sequence == refIndex &&
+					currvarref->position - refstart < lcb.regions.at(0).length
+				)
+			)
+			{
+				if ( currpos == referenceList.getReference(refIndex).sequence.size() )
+				{
+					printf("ERROR: LCB %d extends beyond reference (position %d)\n", j,
+					currpos);
+					return;
+				}
+				
+				if ( col == width )
+				{
+					out << endl;
+					col = 0;
+				}
+				
+				if
+				(
+					currvar == variantsSize ||
+					(currpos != currvarref->position && currpos >= refstart) ||
+					(
+						currvarref->reference == '-' &&
+						currvar > 0 &&
+						variantList.getVariant(currvar - 1).position != currpos &&
+						currpos >= refstart
+					)
+				)
+				{
+				  // ALB -- do not output if this SNP has been filtered for some reason
+				  //if ( currvarref->filters == 0 ) {
+					out << referenceList.getReference(refIndex).sequence.at(currpos);
+					if(i == 0) {
+					  // believe our internal genome sequence index is 0-based, so add one here to be compatible with GenBank 1-based system
+					  out2 << currpos + 1 << ",";
+					}
+					//}
+					col++;
+					
+					if ( col == width )
+					{
+						out << endl;
+						col = 0;
+					}
+				}
+				
+				if ( currvar < variantsSize && currpos == currvarref->position )
+				{
+				  // ALB -- do not output if this SNP has been filtered for some reason
+				  if ( currvarref->filters == 0 ) {
+					out << currvarref->alleles[i];
+					if(i == 0) {
+					  out2 << currpos + 1 << ",";
+					}
+				  }
+					currvar++;
+					
+					if ( currvar < variantsSize )
+					{
+						currvarref = &variantList.getVariant(currvar);
+					}
+					
+					col++;
+				}
+				
+				if ( currvar == variantsSize || currvarref->position > currpos || currvarref->sequence != refIndex )
+				{
+					currpos++;
+				}
+			}
+			
+		}
+		
+		out << endl;
+		if(i == 0) {
+		  out2 << endl;
+		}
+	}
+}
 void LcbList::writeToProtocolBuffer(Harvest * msg) const
 {
 	Harvest::Alignment * msgAlignment = msg->mutable_alignment();

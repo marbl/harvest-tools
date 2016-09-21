@@ -409,6 +409,11 @@ void HarvestIO::writeMfa(std::ostream &out) const
 	lcbList.writeToMfa(out, referenceList, trackList, variantList);
 }
 
+void HarvestIO::writeFilteredMfa(std::ostream &out, std::ostream &out2) const
+{
+        lcbList.writeFilteredToMfa(out, out2, referenceList, trackList, variantList);
+}
+
 void HarvestIO::writeNewick(std::ostream &out, bool useMult) const
 {
 	if ( ! phylogenyTree.getRoot() )

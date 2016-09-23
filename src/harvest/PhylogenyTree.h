@@ -23,6 +23,7 @@ public:
 	~PhylogenyTree();
 	
 	void clear();
+	const PhylogenyTreeNode * getLca(int track1, int track2) const;
 	const PhylogenyTreeNode * getLeaf(int id) const;
 	void getLeafIds(std::vector<int> & ids) const;
 	double getMult() const;

@@ -35,6 +35,49 @@ void PhylogenyTree::clear()
 	}
 }
 
+const PhylogenyTreeNode * PhylogenyTree::getLca(int track1, int track2) const
+{
+	const PhylogenyTreeNode * node1;
+	const PhylogenyTreeNode * node2;
+	
+	for ( int i = 0; i < leaves.size(); i++ )
+	{
+		if ( leaves[i]->getTrackId() == track1 )
+		{
+			node1 = leaves[i];
+		}
+		
+		if ( leaves[i]->getTrackId() == track2 )
+		{
+			node2 = leaves[i];
+		}
+	}
+	
+	while ( node1 && node1->getAncestors() > node2->getAncestors() )
+	{
+		node1 = node1->getParent();
+	}
+	
+	while ( node2 && node2->getAncestors() > node1->getAncestors() )
+	{
+		node2 = node2->getParent();
+	}
+	
+	while ( node1 && node2 && node1 != node2 )
+	{
+		node1 = node1->getParent();
+		node2 = node2->getParent();
+	}
+	
+	if ( ! node1 || ! node2 )
+	{
+		cout << "ERROR: could not get LCA for tracks " << track1 << " and " << track2 << "." << endl;
+		exit(1);
+	}
+	
+	return node1;
+}
+
 void PhylogenyTree::getLeafIds(vector<int> & ids) const
 {
 	ids.resize(0);

@@ -235,7 +235,7 @@ public:
 	void writeToMfa(std::ostream &out, bool indels, const TrackList & trackList) const;
 	void writeToProtocolBuffer(Harvest * harvest) const;
 	void writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const;
-	void writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const AnnotationList & annotationList, const TrackList & trackList) const;
+	void writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const AnnotationList & annotationList, const TrackList & trackList, const std::vector<int> & tracks, bool signature = false) const;
 	
 	static bool variantLessThan(const Variant & a, const Variant & b)
 	{

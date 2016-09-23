@@ -47,7 +47,7 @@ public:
 	void writeFilteredMfa(std::ostream &out, std::ostream &out2) const;
 	void writeNewick(std::ostream &out, bool useMult = false) const;
 	void writeSnp(std::ostream &out, bool indels = false) const;
-	void writeVcf(std::ostream &out, bool indels = false) const;
+	void writeVcf(std::ostream &out, const std::vector<std::string> * trackNames = 0, const PhylogenyTreeNode * node = 0, bool indels = false, bool signature = false) const;
 	void writeXmfa(std::ostream &out, bool split = false) const;
 	void writeBackbone(std::ostream &out) const;
 	

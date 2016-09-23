@@ -973,7 +973,7 @@ void VariantList::writeToProtocolBuffer(Harvest * msg) const
 	}
 }
 
-void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const AnnotationList & annotationList, const TrackList & trackList) const
+void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const AnnotationList & annotationList, const TrackList & trackList, const vector<int> & tracksFocus, bool signature) const
 {
 	//tjt: Currently outputs SNPs, no indels
 	//tjt: next pass will add standard VCF output for indels, plus an attempt at qual vals
@@ -1002,10 +1002,31 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 	//#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  AA1 
 	out << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT";
 
-	//output the file name for each column
-	for ( int i = 0; i < trackList.getTrackCount(); i++ )
+	vector<int> tracks;
+	
+	if ( signature )
 	{
-		const TrackList::Track & track = trackList.getTrack(i);
+		// output all tracks
+		
+		for ( int i = 0; i < trackList.getTrackCount(); i++ )
+		{
+			tracks.push_back(i);
+		}
+	}
+	else
+	{
+		// only output tracks of interest (will be all if not differential)
+		
+		for ( int i = 0; i < tracksFocus.size(); i++ )
+		{
+			tracks.push_back(tracksFocus[i]);
+		}
+	}
+	
+	//output the file name for each column
+	for ( int i = 0; i < tracks.size(); i++ )
+	{
+		const TrackList::Track & track = trackList.getTrack(tracks[i]);
 		//out << '\t' << (msgTrack.has_name() ? msgTrack.name() : msgTrack.file());
 		out << '\t' << track.file;
 	}
@@ -1017,13 +1038,74 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 	{
 		const Variant & variant = variants.at(j);
 
-		//no indels for now..
-		if (variant.alleles[0] == indl)
+		//no indels for now.. TODO: should this check outside the clade also?
+		bool indel = false;
+		//
+		for ( int i = 0; i < tracks.size(); i++ )
+		{
+			if ( variant.alleles[tracks[i]] == indl )
+			{
+				indel = true;
+				break;
+			}
+		}
+		
+		if ( indel )
+		{
 			continue;
+		}
+		
+		if ( tracks.size() != trackList.getTrackCount() )
+		{
+			// differential
 			
-		if (find(variant.alleles.begin(), variant.alleles.end(),indl) != variant.alleles.end())
-			continue;
-
+			bool same = true;
+			
+			for ( int i = 1; i < tracks.size(); i++ )
+			{
+				if ( variant.alleles[tracks[i]] != variant.alleles[tracks[0]] )
+				{
+					same = false;
+					break;
+				}
+			}
+			
+			if ( same )
+			{
+				continue;
+			}
+		}
+		else if ( signature )
+		{
+			bool pass[tracks.size()];
+			
+			for ( int i = 0; i < tracks.size(); i++ )
+			{
+				pass[i] = variant.alleles[i] != variant.alleles[tracksFocus[0]];
+			}
+			
+			for ( int i = 0; i < tracksFocus.size(); i++ )
+			{
+				pass[tracksFocus[i]] = variant.alleles[tracksFocus[i]] == variant.alleles[tracksFocus[0]];
+			}
+			
+			bool isSignature = true;
+			
+			for ( int i = 0; i < tracks.size(); i++ )
+			{
+				if ( ! pass[i] )
+				{
+					isSignature = false;
+					break;
+				}
+			}
+			
+			if ( ! isSignature )
+			{
+				continue;
+			}
+		}
+		
 		//capture the reference position of variant
 		int pos = variant.position;
 		
@@ -1068,20 +1150,22 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 		out << "\t" << variant.reference << "\t";
 		allele_list.push_back(variant.reference);
 		bool prev_var = false;
-		for ( int i = 0; i < trackList.getTrackCount(); i++ )
+		for ( int i = 0; i < tracks.size(); i++ )
 		{
-			if (find(allele_list.begin(), allele_list.end(), variant.alleles[i]) == allele_list.end())
+			char allele = variant.alleles[tracks[i]];
+			
+			if (find(allele_list.begin(), allele_list.end(), allele) == allele_list.end())
 			{
-				if (variant.alleles[i] == indl) 
-					continue;
+				if (allele == indl) 
+					continue; // should never happen
 					
 				//to know if we need to output a preceding comma
-				if (!prev_var)
-				out << variant.alleles[i];
-				else
-				out << "," << variant.alleles[i];
+				if (prev_var)
+					out << ",";
+				
+				out << allele;
 
-				allele_list.push_back(variant.alleles[i]);
+				allele_list.push_back(allele);
 				prev_var = true;
 			}
 		}
@@ -1183,9 +1267,9 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 			indexByAllele[allele_list[i]] = i;
 		}
 		
-		for (i = 0; i < trackList.getTrackCount(); i++ )
+		for (i = 0; i < tracks.size(); i++ )
 		{
-			out << "\t" << indexByAllele[variant.alleles[i]];
+			out << "\t" << indexByAllele[variant.alleles[tracks[i]]];
 		}
 		
 		out << "\n";

@@ -266,16 +266,17 @@ void PhylogenyTreeNode::getPairwiseDistances(float ** matrix, int size)
 	}
 }
 
-void PhylogenyTreeNode::initialize(int & newId, int &leaf, float depthParent)
+void PhylogenyTreeNode::initialize(int & newId, int &leaf, float depthParent, int ancestorsNew)
 {
 	id = newId;
 	newId++;
 	leafMin = leaf;
 	depth = depthParent + distance;
+	ancestors = ancestorsNew;
 	
 	for ( int i = 0; i < children.size(); i++ )
 	{
-		children[i]->initialize(newId, leaf, depth);
+		children[i]->initialize(newId, leaf, depth, ancestors + 1);
 	}
 	
 	if ( children.size() == 0 )

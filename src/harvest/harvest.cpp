@@ -12,7 +12,49 @@
 
 using namespace::std;
 
-int main(int argc, const char * argv[])
+void parseTracks(char * arg, vector<string> & tracks, bool & lca)
+{
+	lca = false;
+	bool list = false;
+	
+	char * i = arg;
+	
+	while ( *i != 0 )
+	{
+		if ( *i == ':' )
+		{
+			if ( lca )
+			{
+				cerr << "ERROR: LCA must only have 2 tracks (\"" << arg << "\")." << endl;
+				exit(1);
+			}
+			
+			lca = true;
+		}
+		else if ( *i == ',' )
+		{
+			list = true;
+		}
+		
+		if ( lca && list )
+		{
+			cerr << "ERROR: Cannot use ':' and ',' when specifying tracks (\"" << arg << "\")." << endl;
+			exit(1);
+		}
+		
+		i++;
+	}
+	
+	char * token = strtok(arg, ":,");
+	
+	while ( token )
+	{
+		tracks.push_back(token);
+		token = strtok(0, ":,");
+	}
+}
+
+int main(int argc, char * argv[])
 {
 	const char * input = 0;
 	const char * output = 0;
@@ -31,6 +73,9 @@ int main(int argc, const char * argv[])
 	const char * outNewick = 0;
 	const char * outSnp = 0;
 	const char * outVcf = 0;
+	vector<string> tracks;
+	bool lca = false;
+	bool signature = false;
 	const char * outBB = 0;
 	const char * outXmfa = 0;
 	bool help = false;
@@ -52,6 +97,20 @@ int main(int argc, const char * argv[])
 					if ( strcmp(argv[i], "--midpoint-reroot") == 0 )
 					{
 						midpointReroot = true;
+					}
+					else if ( strcmp(argv[i], "--diff") == 0 )
+					{
+						parseTracks(argv[++i], tracks, lca);
+					}
+					else if ( strcmp(argv[i], "--signature") == 0 )
+					{
+						signature = true;
+						parseTracks(argv[++i], tracks, lca);
+					}
+					else
+					{
+						printf("ERROR: Unrecognized option ('%s').\n", argv[i]);
+						help = true;
 					}
 					break;
 				case 'a': maf = argv[++i]; break;
@@ -114,6 +173,12 @@ int main(int argc, const char * argv[])
 		cout << "   -u 0/1 (update the branch values to reflect genome length)" << endl;
 		cout << "   -v <VCF input>" << endl;
 		cout << "   -V <VCF output>" << endl;
+		cout << "     --diff <track1>,<track2>,... #only differential variants of tracks listed" << endl;
+		cout << "     --diff <track1>:<track2>     #only differential variants of LCA clade of" << endl;
+		cout << "                                   <track1> and <track2>" << endl;
+		cout << "     --signature <track1>,<track2>,... #only signature variants of tracks listed" << endl;
+		cout << "     --signature <track1>:<track2>     #only signature variants of LCA clade of" << endl;
+		cout << "                                        <track1> and <track2>" << endl;
 		cout << "   -x <xmfa alignment file>" << endl;
 		cout << "   -X <output xmfa alignment file>" << endl;
 		cout << "   -h (show this help)" << endl;
@@ -422,8 +487,26 @@ int main(int argc, const char * argv[])
 			fp = &fout;
 		}
 		
-		hio.writeVcf(*fp, true);
-
+		try
+		{
+			hio.writeVcf
+			(
+				*fp,
+				tracks.size() > 0 && ! lca ? &tracks : 0,
+				lca ? hio.phylogenyTree.getLca
+				(
+					hio.trackList.getTrackIndexByFile(tracks[0]),
+					hio.trackList.getTrackIndexByFile(tracks[1])
+				) : 0,
+				true,
+				signature
+			);
+		}
+		catch ( const TrackList::TrackNotFoundException & e )
+		{
+			cerr << "ERROR: No track named \"" << e.name << "\"" << endl;
+			return 1;
+		}
 	}
 	
     return 0;

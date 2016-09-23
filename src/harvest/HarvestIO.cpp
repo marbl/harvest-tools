@@ -488,9 +488,39 @@ void HarvestIO::writeSnp(std::ostream &out, bool indels) const
 	variantList.writeToMfa(out, indels, trackList);
 }
 
-void HarvestIO::writeVcf(std::ostream &out, bool indels) const
+void HarvestIO::writeVcf(std::ostream &out, const vector<string> * trackNames, const PhylogenyTreeNode * node, bool indels, bool signature) const
 {
-	variantList.writeToVcf(out, indels, referenceList, annotationList, trackList);
+	vector<int> tracks;
+	
+	if ( trackNames )
+	{
+		// specific tracks
+		
+		for ( int i = 0; i < trackNames->size(); i++ )
+		{
+			tracks.push_back(trackList.getTrackIndexByFile(trackNames->at(i)));
+		}
+		
+		sort(tracks.begin(), tracks.end());
+	}
+	else if ( node )
+	{
+		// clade variants; only use leaves of node
+		
+		node->getLeafIds(tracks);
+		sort(tracks.begin(), tracks.end());
+	}
+	else
+	{
+		// use all tracks
+		
+		for ( int i = 0; i < trackList.getTrackCount(); i++ )
+		{
+			tracks.push_back(i);
+		}
+	}
+	
+	variantList.writeToVcf(out, indels, referenceList, annotationList, trackList, tracks, signature);
 }
 
 

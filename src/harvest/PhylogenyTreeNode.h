@@ -25,6 +25,7 @@ public:
 	
 	PhylogenyTreeNode * bisectEdge(float distanceLower);
 	PhylogenyTreeNode * collapse();
+	int getAncestors() const;
 	float getBootstrap() const;
 	PhylogenyTreeNode * getChild(unsigned int index) const;
 	int getChildrenCount() const;
@@ -39,7 +40,7 @@ public:
 	void getLeafIds(std::vector<int> & ids) const;
 	void getPairwiseDistances(float ** matrix, int size);
 	const PhylogenyTreeNode * getParent() const;
-	void initialize(int & newId, int & leaf, float depthParent = 0);
+	void initialize(int & newId, int & leaf, float depthParent = 0, int ancestorsNew = 0);
 	void invert(PhylogenyTreeNode * fromChild = 0);
 	void setAlignDist(float dist, float dep);
 	void setParent(PhylogenyTreeNode * parentNew, float distanceNew);
@@ -65,6 +66,7 @@ private:
 	PhylogenyTreeNode * parent;
 	int id;
 	int trackId;
+	int ancestors;
 	double distance;
 	float depth;
 	int leafMin;
@@ -72,6 +74,7 @@ private:
 	float bootstrap;
 };
 
+inline int PhylogenyTreeNode::getAncestors() const {return ancestors;}
 inline float PhylogenyTreeNode::getBootstrap() const {return bootstrap;}
 inline PhylogenyTreeNode * PhylogenyTreeNode::getChild(unsigned int index) const {return children[index];};
 inline int PhylogenyTreeNode::getChildrenCount() const {return children.size();}

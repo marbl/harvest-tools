@@ -973,16 +973,24 @@ void VariantList::writeToProtocolBuffer(Harvest * msg) const
 	}
 }
 
-void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const TrackList & trackList) const
+void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const AnnotationList & annotationList, const TrackList & trackList) const
 {
 	//tjt: Currently outputs SNPs, no indels
 	//tjt: next pass will add standard VCF output for indels, plus an attempt at qual vals
 	//tjt: also filters need to be added to findVariants to populate FILTer column
-
+	
+	int annCur = -1; // current annotation
+	int annNext = 0;
+	
 	//indel char, to skip columns with indels (for now)
 	char indl = '-';
 	//the VCF output file
 
+	out << "##INFO=<ID=CDS,Number=1,Type=String,Description=\"Coding sequence locus\">" << endl;
+	out << "##INFO=<ID=SYN,Number=0,Type=Flag,Description=\"All alternative alleles are synonymous in coding sequence\">" << endl;
+	out << "##INFO=<ID=AAR,Number=1,Type=String,Description=\"Reference amino acid in coding sequence\">" << endl;
+	out << "##INFO=<ID=AAA,Number=.,Type=String,Description=\"Alternate amino acid in coding sequence, one per alternate allele\">" << endl;
+	
 	for ( int i = 0; i < filters.size(); i++ )
 	{
 		const Filter & filter = filters.at(i);
@@ -993,7 +1001,6 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 	//the VCF header line (skipping previous lines for simplicity, can/will add in later)
 	//#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  AA1 
 	out << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT";
-
 
 	//output the file name for each column
 	for ( int i = 0; i < trackList.getTrackCount(); i++ )
@@ -1019,7 +1026,26 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 
 		//capture the reference position of variant
 		int pos = variant.position;
-
+		
+		// annotations use concatenated coords; sum previous ref lengths to translate
+		//
+		int offset = 0;
+		//
+		for ( int i = 0; i < variant.sequence; i++ )
+		{
+			offset += referenceList.getReference(i).sequence.length();
+		}
+		
+		while ( annNext < annotationList.getAnnotationCount() && annotationList.getAnnotation(annNext).start <= pos + offset )
+		{
+			if ( annotationList.getAnnotation(annNext).feature == "CDS" )
+			{
+				annCur = annNext;
+			}
+			
+			annNext++;
+		}
+		
 		//output first few columns, including context (+/- 7bp for now)
 		int ws = 10;
 		int lend = pos-ws;
@@ -1098,7 +1124,52 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 		}
 		
 		//INFO
-		out << "\tNA";
+		//
+		out << '\t';
+		//
+		if ( annCur != -1 && annotationList.getAnnotation(annCur).end >= pos + offset )
+		{
+			out << "CDS=" << annotationList.getAnnotation(annCur).locus << ';';
+			
+			string codonRef = refseq.substr(annotationList.getAnnotation(annCur).start - offset + (pos + offset - annotationList.getAnnotation(annCur).start) / 3 * 3, 3);
+			int codonPos = (pos + offset - annotationList.getAnnotation(annCur).start) % 3;
+			
+			bool rc = annotationList.getAnnotation(annCur).reverse;
+			
+			string aaRef = translations.count(codonRef) ? rc ? translationsRc.at(codonRef) : translations.at(codonRef) : ".";
+			out << "AAR=" << aaRef << ";AAA=";
+			
+			bool syn = true;
+			
+			for ( int i = 1; i < allele_list.size(); i++ )
+			{
+				if ( i > 1 )
+				{
+					out << ',';
+				}
+				
+				string codonAlt = codonRef;
+				codonAlt[codonPos] = allele_list.at(i);
+				string aaAlt = translations.count(codonAlt) ? rc ? translationsRc.at(codonAlt) : translations.at(codonAlt) : ".";
+				
+				if ( aaRef != aaAlt )
+				{
+					syn = false;
+				}
+				
+				out << aaAlt;
+			}
+			
+			if ( syn )
+			{
+				out << ";SYN";
+			}
+		}
+		else
+		{
+			out << "NA";
+		}
+		
 		//FORMAT
 		out << "\tGT";
 

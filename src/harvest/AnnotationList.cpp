@@ -10,6 +10,11 @@
 
 using namespace std;
 
+bool annotationLessThan(const Annotation & a, const Annotation & b)
+{
+	return a.start < b.start;
+}
+
 void AnnotationList::clear()
 {
 	annotations.clear();
@@ -60,6 +65,10 @@ void AnnotationList::initFromCapnp(const capnp::Harvest::Reader & harvestReader,
 		
 		//printf("%s\t%d\t%d\t%d\t%c\t%s\t%s\n", annotation.locus.c_str(), msgAnn.sequence(), annotation.start, annotation.end, annotation.reverse ? '-' : '+', annotation.name.c_str(), annotation.description.c_str());
 	}
+	
+	// older capnp files might not be sorted
+	//
+	sort(annotations.begin(), annotations.end(), annotationLessThan);
 }
 
 void AnnotationList::initFromGenbank(const char * file, ReferenceList & referenceList, bool useSeq)
@@ -318,6 +327,8 @@ void AnnotationList::initFromGenbank(const char * file, ReferenceList & referenc
 			}
 		}
 	}
+	
+	sort(annotations.begin(), annotations.end(), annotationLessThan);
 	
 	for ( int i = 0; false && i < annotations.size(); i++ )
 	{

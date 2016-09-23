@@ -14,6 +14,7 @@
 #include "harvest/PhylogenyTree.h"
 #include "harvest/ReferenceList.h"
 #include "harvest/TrackList.h"
+#include "harvest/AnnotationList.h"
 
 typedef long long unsigned int uint64;
 
@@ -98,8 +99,7 @@ public:
 	void writeToMfa(std::ostream &out, bool indels, const TrackList & trackList) const;
 	void writeToProtocolBuffer(Harvest * harvest) const;
 	void writeToCapnp(capnp::Harvest::Builder & harvestBuilder) const;
-	void writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const TrackList & trackList) const;
-	//void writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const AnnotationList & annotationList, const TrackList & trackList, const PhylogenyTreeNode * treeNode = 0, const Vector<int> * tracks = 0, bool ) const;
+	void writeToVcf(std::ostream &out, bool indels, const ReferenceList & referenceList, const AnnotationList & annotationList, const TrackList & trackList) const;
 	
 	static bool variantLessThan(const Variant & a, const Variant & b)
 	{

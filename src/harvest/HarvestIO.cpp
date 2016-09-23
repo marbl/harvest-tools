@@ -490,7 +490,7 @@ void HarvestIO::writeSnp(std::ostream &out, bool indels) const
 
 void HarvestIO::writeVcf(std::ostream &out, bool indels) const
 {
-	variantList.writeToVcf(out, indels, referenceList, trackList);
+	variantList.writeToVcf(out, indels, referenceList, annotationList, trackList);
 }
 
 

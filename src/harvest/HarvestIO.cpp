@@ -21,6 +21,7 @@
 #include <zlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <algorithm>
 
 #define SET_BINARY_MODE(file)
 

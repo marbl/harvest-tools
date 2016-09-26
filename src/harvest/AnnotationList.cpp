@@ -7,6 +7,7 @@
 #include "AnnotationList.h"
 #include <fstream>
 #include "parse.h"
+#include <algorithm>
 
 using namespace std;
 

@@ -476,6 +476,12 @@ int main(int argc, char * argv[])
 
 	if ( outVcf )
 	{
+		if ( lca && ! hio.phylogenyTree.getRoot() )
+		{
+			cerr << "ERROR: No tree loaded for LCA\n";
+			return 1;
+		}
+		
 		if (!quiet) cerr << "Writing " << outVcf << "...\n";
 		
 		std::ostream* fp = &cout;

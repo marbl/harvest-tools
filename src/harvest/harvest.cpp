@@ -54,6 +54,8 @@ void parseTracks(char * arg, vector<string> & tracks, bool & lca)
 	}
 }
 
+static const char * version = "1.3";
+
 int main(int argc, char * argv[])
 {
 	const char * input = 0;
@@ -94,7 +96,12 @@ int main(int argc, char * argv[])
 			switch ( argv[i][1] )
 			{
 				case '-':
-					if ( strcmp(argv[i], "--midpoint-reroot") == 0 )
+					if ( strcmp(argv[i], "--version") == 0 )
+					{
+						cout << version << endl;
+						return 0;
+					}
+					else if ( strcmp(argv[i], "--midpoint-reroot") == 0 )
 					{
 						midpointReroot = true;
 					}
@@ -154,7 +161,7 @@ int main(int argc, char * argv[])
 	
 	if (help || argc < 2)
 	{
-		cout << "harvesttools options:" << endl;
+		cout << "harvesttools version " << version << " options:" << endl;
 		cout << "   -i <Gingr input>" << endl;
 		cout << "   -b <bed filter intervals>,<filter name>,\"<description>\"" << endl;
 		cout << "   -B <output backbone intervals>" << endl;

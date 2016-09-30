@@ -105,7 +105,7 @@ int main(int argc, char * argv[])
 					{
 						midpointReroot = true;
 					}
-					else if ( strcmp(argv[i], "--diff") == 0 )
+					else if ( strcmp(argv[i], "--internal") == 0 )
 					{
 						parseTracks(argv[++i], tracks, lca);
 					}
@@ -180,9 +180,10 @@ int main(int argc, char * argv[])
 		cout << "   -u 0/1 (update the branch values to reflect genome length)" << endl;
 		cout << "   -v <VCF input>" << endl;
 		cout << "   -V <VCF output>" << endl;
-		cout << "     --diff <track1>,<track2>,... #only differential variants of tracks listed" << endl;
-		cout << "     --diff <track1>:<track2>     #only differential variants of LCA clade of" << endl;
-		cout << "                                   <track1> and <track2>" << endl;
+		cout << "     --internal <track1>,<track2>,...  #only variants that differ among tracks" << endl;
+		cout << "                                        listed" << endl;
+		cout << "     --internal <track1>:<track2>      #only variants that differ within LCA" << endl;
+		cout << "                                        clade of <track1> and <track2>" << endl;
 		cout << "     --signature <track1>,<track2>,... #only signature variants of tracks listed" << endl;
 		cout << "     --signature <track1>:<track2>     #only signature variants of LCA clade of" << endl;
 		cout << "                                        <track1> and <track2>" << endl;

@@ -274,7 +274,14 @@ void VariantList::addVariantsFromAlignment(const vector<string> & seqs, const Re
 			
 			if ( referenceList.getReferenceCount() )
 			{
-				varNew->reference = referenceList.getReference(sequence).sequence[position];
+				if ( offset > 0 )
+				{
+					varNew->reference = '-';
+				}
+				else
+				{
+					varNew->reference = referenceList.getReference(sequence).sequence[position];
+				}
 			}
 			else
 			{

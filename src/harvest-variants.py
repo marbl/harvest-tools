@@ -1,4 +1,4 @@
-#!python
+#!python3
 import os,sys,string,subprocess
 ##harvest utility file for writing VCF file
 #ROADMAP
@@ -10,7 +10,7 @@ harvest_found = True
 
 #usage/help
 if len(sys.argv) == 1 or sys.argv[1] in helpme:
-    print "usage: harvest-variants.py <parsnp.hvt> [outfile]"
+    print("usage: harvest-variants.py <parsnp.hvt> [outfile]")
     sys.exit(1)
 
 #check in path for harvest

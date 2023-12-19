@@ -1,4 +1,4 @@
-#!python
+#!python3
 import os,sys,string,subprocess
 
 ##harvest utility file for tab-delimited backbone file
@@ -12,7 +12,7 @@ harvest_found = True
 
 #print help/usage
 if len(sys.argv) == 1 or sys.argv[1] in helpme:
-    print "usage: harvest-backbone.py <parsnp.hvt> [outfile]"
+    print("usage: harvest-backbone.py <parsnp.hvt> [outfile]")
     sys.exit(1)
 
 #check in path for harvest

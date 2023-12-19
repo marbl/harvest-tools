@@ -1352,7 +1352,7 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 				currvar = blockVarStart;
 			}
 			
-			out << ">" << r+1 << ":" << start << "-" << end << " ";
+			out << "> " << r+1 << ":" << start << "-" << end << " ";
 			
 			if ( ! region.reverse )
 			{

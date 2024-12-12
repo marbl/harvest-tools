@@ -140,7 +140,6 @@ void LcbList::initFromMaf(const char * file, ReferenceList * referenceList, Trac
 	vector<string> seqs;
 	const bool oldTags = phylogenyTree->getRoot();
 	int * trackIndecesNew;
-	bool mauve = false;
 	vector<string> refs;
 	vector<string> refNames;
 	map<string, int> refIndexByName;
@@ -699,7 +698,6 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 	vector<string> seqs;
 	const bool oldTags = phylogenyTree->getRoot();
 	int * trackIndecesNew;
-	bool mauve = false;
 	string ref;
 	bool createReference = referenceList->getReferenceCount() == 0;
 	
@@ -733,12 +731,9 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 			
 			if ( (suffix = removePrefix(line, "#FormatVersion ")) )
 			{
-				if ( removePrefix(suffix, "Mauve") )
-				{
-					mauve = true;
-				}
+				// Mauve format == Parsnp 2 format
 			}
-			else if ( mauve && (suffix = removePrefix(line, "#Sequence")) )
+			else if ((suffix = removePrefix(line, "#Sequence")))
 			{
 				while ( *suffix >= '0' && *suffix <= '9' )
 				{
@@ -855,18 +850,11 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 			LcbList::Region * region = &lcb->regions[trackIndex];
 			
 			region->position = atoi(strtok(0, "-"));
-			
-			if ( mauve )
-			{
-				region->position--;
-			}
-			
 			int end = atoi(strtok(0, " "));
-			
-			if ( mauve )
-			{
-				end--;
-			}
+
+			// Convert to 0 index (XMFA is 1-indexed)
+			region->position--;
+			end--;
 			
 			region->length = end - region->position + 1;
 			region->reverse = *strtok(0, " ") == '-';

@@ -1,4 +1,5 @@
-AC_INIT(src/harvest/harvest.cpp)
+AC_INIT
+AC_CONFIG_SRCDIR([src/harvest/harvest.cpp])
 
 AC_ARG_WITH(protobuf, [  --with-protobuf=<path/to/protobuf>     Protocol Buffers install dir (default: /usr/local/)])
 AC_ARG_WITH(capnp, [  --with-capnp=<path/to/capnp>     Cap'n Proto install dir (default: /usr/local/)])
@@ -29,7 +30,7 @@ then
 	AC_MSG_ERROR([Cap'n Proto compiler (capnp) not found.])
 fi
 
-CPPFLAGS="-I$with_protobuf/include -I$with_capnp/include -std=c++14"
+CPPFLAGS="$CPPFLAGS -I$with_protobuf/include -I$with_capnp/include -std=c++17"
 
 AC_CHECK_HEADER(google/protobuf/stubs/common.h, [result=1], [result=0])
 
@@ -55,4 +56,5 @@ fi
 AC_SUBST(protobuf, $with_protobuf)
 AC_SUBST(capnp, $with_capnp)
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

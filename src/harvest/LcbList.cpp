@@ -854,20 +854,16 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 			
 			LcbList::Region * region = &lcb->regions[trackIndex];
 			
-			region->position = atoi(strtok(0, "-"));
-			
-			if ( mauve )
-			{
-				region->position--;
-			}
-			
-			int end = atoi(strtok(0, " "));
-			
-			if ( mauve )
-			{
-				end--;
-			}
-			
+			// XMFA coordinates are 1-based and inclusive for every format we
+			// read here (Mauve, Parsnp, MultiSNiP). Convert to 0-based
+			// internally so reference lookups (sequence[position]) and VCF
+			// output (which adds 1 back) land on the correct base. Previously
+			// only Mauve was decremented, leaving Parsnp/MultiSNiP positions
+			// one too high in the VCF and dereferencing the wrong reference base.
+			region->position = atoi(strtok(0, "-")) - 1;
+
+			int end = atoi(strtok(0, " ")) - 1;
+
 			region->length = end - region->position + 1;
 			region->reverse = *strtok(0, " ") == '-';
 			
@@ -878,9 +874,9 @@ void LcbList::initFromXmfa(const char * file, ReferenceList * referenceList, Tra
 					lcb->sequence = 0;
 					lcb->position = region->position;
 					
-					if ( end > ref.length() )
+					if ( end + 1 > ref.length() )
 					{
-						ref.resize(end, 'N');
+						ref.resize(end + 1, 'N');
 					}
 				}
 				else
@@ -1340,7 +1336,7 @@ void LcbList::writeToXmfa(ostream & out, const ReferenceList & referenceList, co
 			// >1:8230-11010 + cluster174 s1:p8230
 			
 			const LcbList::Region & region = lcb.regions.at(r);
-			int start = region.position;
+			int start = region.position + 1; // convert 0-based internal coord back to 1-based XMFA
 			int end = start + region.length - 1;
 			
 			if (r == 0)

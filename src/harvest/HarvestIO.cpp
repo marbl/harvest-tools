@@ -208,7 +208,13 @@ bool HarvestIO::loadHarvestProtocolBuffer(const char * file)
 	GzipInputStream gz(&raw_input);
 	CodedInputStream coded_input(&gz);
 	
+	// The two-argument form (total limit, warning threshold) was removed in
+	// protobuf 3.6; newer versions take a single total-bytes limit.
+#if defined(GOOGLE_PROTOBUF_VERSION) && GOOGLE_PROTOBUF_VERSION >= 3006000
+	coded_input.SetTotalBytesLimit(INT_MAX);
+#else
 	coded_input.SetTotalBytesLimit(INT_MAX, INT_MAX);
+#endif
 	
 	if ( ! harvest.ParseFromCodedStream(&coded_input) )
 	{

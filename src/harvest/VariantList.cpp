@@ -565,7 +565,7 @@ void VariantList::initFromVcf(const char * file, const ReferenceList & reference
 			uint64 filters = 0;
 			stringstream filterStream(filterString);
 			
-			while ( getline(filterStream, filterString, ':') )
+			while ( getline(filterStream, filterString, ';') )
 			{
 				if ( filterString.compare(".") != 0 && filterString.compare("PASS") != 0 )
 				{
@@ -993,6 +993,7 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 	char indl = '-';
 	//the VCF output file
 
+	out << "##fileformat=VCFv4.2" << endl;
 	out << "##INFO=<ID=CDS,Number=1,Type=String,Description=\"Coding sequence locus\">" << endl;
 	out << "##INFO=<ID=SYN,Number=0,Type=Flag,Description=\"All alternative alleles are synonymous in coding sequence\">" << endl;
 	out << "##INFO=<ID=AAR,Number=1,Type=String,Description=\"Reference amino acid in coding sequence\">" << endl;
@@ -1201,7 +1202,7 @@ void VariantList::writeToVcf(std::ostream &out, bool indels, const ReferenceList
 			{
 				if ( filterCount > 0 )
 				{
-					out << ':';
+					out << ';';
 				}
 				
 				out << filter.name;
